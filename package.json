@@ -2,9 +2,11 @@
   "name": "budget-planner",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "src/index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "nodemon src/index.ts",
+    "build": "esbuild src/public/ts/index.ts --bundle --target=ESNext --outfile=src/public/js/bundle.js --watch"
   },
   "keywords": [],
   "author": "",
@@ -12,5 +14,17 @@
   "dependencies": {
     "express": "^4.19.2",
     "mongodb": "^6.8.0"
+  },
+  "devDependencies": {
+    "@types/bootstrap": "^5.2.10",
+    "@types/jquery": "^3.5.30",
+    "esbuild": "^0.23.1"
+  },
+  "nodemonConfig": {
+    "watch": [
+      "src"
+    ],
+    "ext": "ts,js,json",
+    "exec": "tsx ./src/index.ts"
   }
 }
