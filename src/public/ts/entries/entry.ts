@@ -1,19 +1,24 @@
 import { Budget } from "../budget"
 import { create } from "../utils"
 
+export interface EntryJson {
+   uuid: string
+}
+
 export abstract class Entry {
    budget: Budget
    uuid: string
    row: HTMLTableRowElement
 
-   constructor(budget: Budget, uuid: string) {
+   constructor(budget: Budget, data: EntryJson) {
       this.budget = budget
-      this.uuid = uuid
-      this.row = create('tr', { id: uuid })
+      this.uuid = data.uuid
+      this.row = create('tr', { id: this.uuid })
    }
 
    abstract build(editMode?: boolean): HTMLTableRowElement
    abstract edit(): void
    abstract delete(): void
    abstract save(): void
+   abstract toJson(): EntryJson
 }

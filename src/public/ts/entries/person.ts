@@ -1,7 +1,11 @@
 import { budget } from ".."
 import { Budget } from "../budget"
-import { Buttons, create, resetForm, Tooltips } from "../utils"
-import { Entry } from "./entry"
+import { Buttons, create, createInputGroup, Icons, resetForm, Tooltips } from "../utils"
+import { Entry, EntryJson } from "./entry"
+
+interface PersonJson extends EntryJson {
+   name: string
+}
 
 export class Person extends Entry {
    static Constraints = {
@@ -13,8 +17,8 @@ export class Person extends Entry {
 
    name: string
 
-   constructor(budget: Budget, data: { uuid: string, name: string }) {
-      super(budget, data.uuid)
+   constructor(budget: Budget, data: PersonJson) {
+      super(budget, data)
       this.name = data.name
    }
 
@@ -24,8 +28,8 @@ export class Person extends Entry {
       this.row.insertCell().textContent = this.name
       // Actions
       const actions = this.row.insertCell().appendChild(create('span', { class: 'd-flex gap-1' }))
-      actions.appendChild(Buttons.Edit()).addEventListener('click', () => this.edit())
-      actions.appendChild(Buttons.Delete()).addEventListener('click', () => this.delete())
+      actions.appendChild(Buttons.Edit).addEventListener('click', () => this.edit())
+      actions.appendChild(Buttons.Delete).addEventListener('click', () => this.delete())
       return this.row
    }
 
@@ -43,31 +47,41 @@ export class Person extends Entry {
 
    delete() {
       if (confirm('Are you sure you want to delete this entry?')) {
-         budget.people = budget.people.filter(person => person.uuid !== this.uuid)
+         budget.people.delete(this.uuid)
          budget.onPeopleChanged()
+      }
+   }
+
+   toJson(): PersonJson {
+      return {
+         uuid: this.uuid,
+         name: this.name
       }
    }
 
    static buildForm(row: HTMLTableRowElement, budget: Budget, editTarget?: Person) {
       row.innerHTML = ''
       // Name
-      const nameInput = row.appendChild(create('td')).appendChild(create('input', {
-         class: 'form-control',
-         type: 'text',
-         placeholder: 'Name'
-      }))
+      const nameInput = row.insertCell()
+         .appendChild(createInputGroup(Icons.Nametag))
+         .appendChild(create('input', {
+            class: 'form-control',
+            type: 'text',
+            placeholder: 'Name'
+         }))
       nameInput.addEventListener('input', this.validateForm.bind(this, row))
       Tooltips.create(nameInput, 'bottom', `${this.Constraints.Name.MinLength} to ${this.Constraints.Name.MaxLength} characters`)
       // Actions
       const actions = row.insertCell().appendChild(create('span', { class: 'd-flex gap-1' }))
       if (editTarget) {
-         actions.appendChild(Buttons.Save()).addEventListener('click', () => editTarget.save())
-         actions.appendChild(Buttons.Cancel()).addEventListener('click', () => editTarget.build())
+         actions.appendChild(Buttons.Save).addEventListener('click', () => editTarget.save())
+         actions.appendChild(Buttons.Cancel).addEventListener('click', () => editTarget.build())
       } else {
-         actions.appendChild(Buttons.Add()).addEventListener('click', (e) => {
+         actions.appendChild(Buttons.Add).addEventListener('click', (e) => {
             nameInput.value = nameInput.value.trim()
             if (this.validateForm(row)) {
-               budget.people.push(new this(budget, { uuid: crypto.randomUUID(), name: nameInput.value }))
+               const uuid = crypto.randomUUID()
+               budget.people.set(uuid, new this(budget, { uuid: uuid, name: nameInput.value }))
                budget.onPeopleChanged()
                resetForm(row)
             }
@@ -95,5 +109,12 @@ export class Person extends Entry {
          element.classList.toggle('is-valid', valid)
       }
       return results.every(result => result[1])
+   }
+
+   static generateSelectOptions(budget: Budget, select: HTMLSelectElement) {
+      select.innerHTML = ''
+      select.options.add(create('option', { value: '', selected: '', disabled: '', hidden: '' }, 'Select...'))
+      for (const person of budget.people.values())
+         select.options.add(create('option', { value: person.uuid }, person.name))
    }
 }

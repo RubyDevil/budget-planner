@@ -45,3 +45,25 @@ th.fit, td.fit {
       opacity: 0;
    }
 }
+
+@font-face {
+   font-family: "Segoe UI Mono W10 Regular";
+   src: url("https://db.onlinewebfonts.com/t/71b00e98168f1a2da1b6c5748587e433.eot");
+   src: url("https://db.onlinewebfonts.com/t/71b00e98168f1a2da1b6c5748587e433.eot?#iefix")format("embedded-opentype"),
+      url("https://db.onlinewebfonts.com/t/71b00e98168f1a2da1b6c5748587e433.woff2")format("woff2"),
+      url("https://db.onlinewebfonts.com/t/71b00e98168f1a2da1b6c5748587e433.woff")format("woff"),
+      url("https://db.onlinewebfonts.com/t/71b00e98168f1a2da1b6c5748587e433.ttf")format("truetype"),
+      url("https://db.onlinewebfonts.com/t/71b00e98168f1a2da1b6c5748587e433.svg#Segoe UI Mono W10 Regular")format("svg");
+}
+
+.monospace {
+   font-family: "Segoe UI Mono W10 Regular", monospace;
+}
+
+.positive {
+   color: rgb(50, 255, 50);
+}
+
+.negative {
+   color: rgb(255, 50, 50);
+}

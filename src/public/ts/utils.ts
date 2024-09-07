@@ -1,40 +1,54 @@
-export function create<T extends keyof HTMLElementTagNameMap>(tagName: T, attributes?: object, content?: string | HTMLElement[]): HTMLElementTagNameMap[T] {
+export function create<T extends keyof HTMLElementTagNameMap>(tagName: T, attributes?: object, content?: string | (string | HTMLElement)[]): HTMLElementTagNameMap[T] {
    const element = document.createElement(tagName)
    if (attributes)
       for (const key in attributes)
          element.setAttribute(key, attributes[key])
    if (content)
       if (typeof content === 'string') element.textContent = content
-      else for (const child of content) element.appendChild(child)
+      else for (const child of content)
+         if (typeof child === 'string') element.appendChild(document.createTextNode(child))
+         else element.appendChild(child)
    return element
 }
 
+export function createInputGroup(icon: HTMLElement) {
+   const inputGroup = create('div', { class: 'input-group' })
+   inputGroup.appendChild(create('span', { class: 'input-group-text' }, [icon]))
+   return inputGroup
+}
+
+export const Icons = {
+   get Plus() { return create('i', { class: 'bi bi-plus-lg' }) },
+   get Minus() { return create('i', { class: 'bi bi-dash-lg' }) },
+   get Check() { return create('i', { class: 'bi bi-check-lg' }) },
+   get Cross() { return create('i', { class: 'bi bi-x-lg' }) },
+   get Edit() { return create('i', { class: 'bi bi-pencil-fill' }) },
+   get Save() { return create('i', { class: 'bi bi-floppy-fill' }) },
+   get Trash() { return create('i', { class: 'bi bi-trash-fill' }) },
+   get Nametag() { return create('i', { class: 'bi bi-tag-fill' }) },
+   get Person() { return create('i', { class: 'bi bi-person-fill' }) },
+   get Dollar() { return create('i', { class: 'bi bi-currency-dollar' }) },
+   get Card() { return create('i', { class: 'bi bi-credit-card-fill' }) },
+   get ID() { return create('i', { class: 'bi bi-person-vcard-fill' }) },
+   get Bag() { return create('i', { class: 'bi bi-bag-fill' }) },
+   get Briefcase() { return create('i', { class: 'bi bi-briefcase-fill' }) },
+   get Wrench() { return create('i', { class: 'bi bi-wrench-adjustable' }) },
+   get Coin() { return create('i', { class: 'bi bi-coin' }) },
+   get CashCoin() { return create('i', { class: 'bi bi-cash-coin' }) },
+   get Vault() { return create('i', { class: 'bi bi-safe2-fill' }) },
+   get Upload() { return create('i', { class: 'bi bi-cloud-arrow-up-fill' }) },
+   get Upload2() { return create('i', { class: 'bi bi-cloud-upload-fill' }) },
+   get Download() { return create('i', { class: 'bi bi-cloud-arrow-down-fill' }) },
+   get Download2() { return create('i', { class: 'bi bi-cloud-download-fill' }) },
+
+}
+
 export const Buttons = {
-   Edit() {
-      const btn = create('button', { class: 'btn btn-outline-secondary' })
-      btn.appendChild(create('i', { class: 'bi bi-pencil-fill' }))
-      return btn
-   },
-   Save() {
-      const btn = create('button', { class: 'btn btn-outline-success' })
-      btn.appendChild(create('i', { class: 'bi bi-check-lg' }))
-      return btn
-   },
-   Delete() {
-      const btn = create('button', { class: 'btn btn-outline-danger' })
-      btn.appendChild(create('i', { class: 'bi bi-trash-fill' }))
-      return btn
-   },
-   Cancel() {
-      const btn = create('button', { class: 'btn btn-outline-warning' })
-      btn.appendChild(create('i', { class: 'bi bi-x-lg' }))
-      return btn
-   },
-   Add() {
-      const btn = create('button', { class: 'btn btn-outline-primary' })
-      btn.appendChild(create('i', { class: 'bi bi-plus-lg' }))
-      return btn
-   }
+   get Edit() { return create('button', { class: 'btn btn-outline-secondary' }, [Icons.Edit]) },
+   get Save() { return create('button', { class: 'btn btn-outline-success' }, [Icons.Save]) },
+   get Delete() { return create('button', { class: 'btn btn-outline-danger' }, [Icons.Trash]) },
+   get Cancel() { return create('button', { class: 'btn btn-outline-warning' }, [Icons.Cross]) },
+   get Add() { return create('button', { class: 'btn btn-outline-primary' }, [Icons.Plus]) },
 }
 
 export class Tooltips {
@@ -92,4 +106,8 @@ export function goToElement(element?: HTMLElement) {
          overlay.remove();
       }, 1000); // This matches the animation duration
    }
+}
+
+export function normalizeDate(date: Date) {
+   return `${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}-${date.getFullYear()}`
 }

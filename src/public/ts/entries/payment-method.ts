@@ -1,6 +1,12 @@
 import { Budget } from "../budget"
-import { Buttons, create, goToElement, resetForm, Tooltips } from "../utils"
-import { Entry } from "./entry"
+import { Buttons, create, createInputGroup, goToElement, Icons, resetForm, Tooltips } from "../utils"
+import { Entry, EntryJson } from "./entry"
+import { Person } from "./person"
+
+export interface PaymentMethodJson extends EntryJson {
+   name: string
+   owner_uuid: string
+}
 
 export class PaymentMethod extends Entry {
    static Constraints = {
@@ -14,11 +20,11 @@ export class PaymentMethod extends Entry {
    owner_uuid: string
 
    get owner() {
-      return this.budget.getPerson(this.owner_uuid)
+      return this.budget.people.get(this.owner_uuid)
    }
 
-   constructor(budget: Budget, data: { uuid: string, name: string, owner_uuid: string }) {
-      super(budget, data.uuid)
+   constructor(budget: Budget, data: PaymentMethodJson) {
+      super(budget, data)
       this.name = data.name
       this.owner_uuid = data.owner_uuid
    }
@@ -32,8 +38,8 @@ export class PaymentMethod extends Entry {
          .addEventListener('click', (e) => goToElement(this.owner?.row))
       // Actions
       const actions = this.row.insertCell().appendChild(create('span', { class: 'd-flex gap-1' }))
-      actions.appendChild(Buttons.Edit()).addEventListener('click', () => this.edit())
-      actions.appendChild(Buttons.Delete()).addEventListener('click', () => this.delete())
+      actions.appendChild(Buttons.Edit).addEventListener('click', () => this.edit())
+      actions.appendChild(Buttons.Delete).addEventListener('click', () => this.delete())
       return this.row
    }
 
@@ -52,38 +58,51 @@ export class PaymentMethod extends Entry {
 
    delete() {
       if (confirm('Are you sure you want to delete this entry?')) {
-         this.budget.people = this.budget.people.filter(person => person.uuid !== this.uuid)
-         document.getElementById(this.uuid)?.remove()
+         this.budget.paymentMethods.delete(this.uuid)
+         this.budget.onPaymentMethodsChanged()
+      }
+   }
+
+   toJson(): PaymentMethodJson {
+      return {
+         uuid: this.uuid,
+         name: this.name,
+         owner_uuid: this.owner_uuid
       }
    }
 
    static buildForm(row: HTMLTableRowElement, budget: Budget, editTarget?: PaymentMethod) {
       row.innerHTML = ''
       // Name
-      const nameInput = row.appendChild(create('td')).appendChild(create('input', {
-         class: 'form-control',
-         type: 'text',
-         placeholder: 'Name'
-      }))
+      const nameInput = row.insertCell()
+         .appendChild(createInputGroup(Icons.Nametag))
+         .appendChild(create('input', {
+            class: 'form-control',
+            type: 'text',
+            placeholder: 'Name'
+         }))
       nameInput.addEventListener('input', this.validateForm.bind(this, row))
       Tooltips.create(nameInput, 'bottom', `${this.Constraints.Name.MinLength} to ${this.Constraints.Name.MaxLength} characters`)
       // Owner
-      const ownerSelect = row.appendChild(create('td')).appendChild(create('select', { class: 'form-control' }))
-      this.generateSelectOptions(budget, ownerSelect)
-      ownerSelect.addEventListener('focusin', (e) => this.generateSelectOptions(budget, ownerSelect))
+      const ownerSelect = row.insertCell()
+         .appendChild(createInputGroup(Icons.Person))
+         .appendChild(create('select', { class: 'form-control' }))
+      Person.generateSelectOptions(budget, ownerSelect)
+      ownerSelect.addEventListener('focusin', (e) => Person.generateSelectOptions(budget, ownerSelect))
       ownerSelect.addEventListener('change', this.validateForm.bind(this, row))
       // Actions
       const actions = row.insertCell().appendChild(create('span', { class: 'd-flex gap-1' }))
       if (editTarget) {
-         actions.appendChild(Buttons.Save()).addEventListener('click', () => editTarget.save())
-         actions.appendChild(Buttons.Cancel()).addEventListener('click', () => editTarget.build())
+         actions.appendChild(Buttons.Save).addEventListener('click', () => editTarget.save())
+         actions.appendChild(Buttons.Cancel).addEventListener('click', () => editTarget.build())
       } else {
-         actions.appendChild(Buttons.Add()).addEventListener('click', (e) => {
+         actions.appendChild(Buttons.Add).addEventListener('click', (e) => {
             // Trim values
             nameInput.value = nameInput.value.trim()
             if (this.validateForm(row)) {
-               budget.paymentMethods.push(new this(budget, {
-                  uuid: crypto.randomUUID(),
+               const uuid = crypto.randomUUID()
+               budget.paymentMethods.set(uuid, new this(budget, {
+                  uuid: uuid,
                   name: nameInput.value,
                   owner_uuid: ownerSelect.value
                }))
@@ -121,8 +140,8 @@ export class PaymentMethod extends Entry {
 
    static generateSelectOptions(budget: Budget, select: HTMLSelectElement) {
       select.innerHTML = ''
-      select.options.add(create('option', { value: '', selected: '', disabled: '', hidden: '' }, 'Select Owner...'))
-      for (const person of budget.people)
-         select.options.add(create('option', { value: person.uuid }, person.name))
+      select.options.add(create('option', { value: '', selected: '', disabled: '', hidden: '' }, 'Select...'))
+      for (const paymentMethod of budget.paymentMethods.values())
+         select.options.add(create('option', { value: paymentMethod.uuid }, paymentMethod.name))
    }
 }
