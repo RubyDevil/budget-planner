@@ -29,12 +29,16 @@ export class PaymentMethod extends Entry {
       this.owner_uuid = data.owner_uuid
    }
 
+   createLink(): HTMLAnchorElement {
+      return create('a', { class: 'text-primary' }, [Icons.Dollar, ' ' + this.name])
+   }
+
    build() {
       this.row.innerHTML = ''
       // Name
       this.row.insertCell().textContent = this.name
       // owner UUID
-      this.row.insertCell().appendChild(create('a', { href: '#' }, this.owner?.name))
+      this.row.insertCell().appendChild(this.owner?.createLink() ?? Entry.unknownLink())
          .addEventListener('click', (e) => goToElement(this.owner?.row))
       // Actions
       const actions = this.row.insertCell().appendChild(create('span', { class: 'd-flex gap-2' }))
@@ -75,7 +79,7 @@ export class PaymentMethod extends Entry {
       row.innerHTML = ''
       // Name
       const nameInput = row.insertCell()
-         .appendChild(createInputGroup(Icons.Nametag))
+         // .appendChild(createInputGroup(Icons.Nametag))
          .appendChild(create('input', {
             class: 'form-control',
             type: 'text',
@@ -85,7 +89,7 @@ export class PaymentMethod extends Entry {
       Tooltips.create(nameInput, 'bottom', `${this.Constraints.Name.MinLength} to ${this.Constraints.Name.MaxLength} characters`)
       // Owner
       const ownerSelect = row.insertCell()
-         .appendChild(createInputGroup(Icons.Person))
+         // .appendChild(createInputGroup(Icons.Person))
          .appendChild(create('select', { class: 'form-control' }))
       Person.generateSelectOptions(budget, ownerSelect)
       ownerSelect.addEventListener('focusin', (e) => Person.generateSelectOptions(budget, ownerSelect))
@@ -140,7 +144,7 @@ export class PaymentMethod extends Entry {
 
    static generateSelectOptions(budget: Budget, select: HTMLSelectElement) {
       select.innerHTML = ''
-      select.options.add(create('option', { value: '', selected: '', disabled: '', hidden: '' }, 'Select...'))
+      select.options.add(create('option', { value: '', selected: '', disabled: '', hidden: '' }, 'Payment Method'))
       for (const paymentMethod of budget.paymentMethods.values())
          select.options.add(create('option', { value: paymentMethod.uuid }, paymentMethod.name))
    }

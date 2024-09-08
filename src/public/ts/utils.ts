@@ -17,33 +17,47 @@ export function createInputGroup(icon: HTMLElement) {
    return inputGroup
 }
 
+export function formatMoneyCell(cell: HTMLTableCellElement, money: number, autoColor?: boolean) {
+   if (autoColor)
+      cell.classList.add('monospace', money >= 0 ? 'text-success' : 'text-danger')
+   cell.textContent = formatMoney(money, true)
+   return cell
+}
+
+export function formatMoney(money: number, positiveSign?: boolean) {
+   return (positiveSign && money >= 0 ? '+' : '') + money.toLocaleString('en-US', { style: 'currency', currency: 'USD' })
+}
+
 export const Icons = {
-   get Plus() { return create('i', { class: 'bi bi-plus-lg' }) },
-   get Minus() { return create('i', { class: 'bi bi-dash-lg' }) },
-   get Check() { return create('i', { class: 'bi bi-check-lg' }) },
-   get Cross() { return create('i', { class: 'bi bi-x-lg' }) },
-   get Edit() { return create('i', { class: 'bi bi-pencil-fill' }) },
-   get Save() { return create('i', { class: 'bi bi-floppy-fill' }) },
-   get Trash() { return create('i', { class: 'bi bi-trash-fill' }) },
-   get Nametag() { return create('i', { class: 'bi bi-tag-fill' }) },
-   get Person() { return create('i', { class: 'bi bi-person-fill' }) },
-   get Dollar() { return create('i', { class: 'bi bi-currency-dollar' }) },
-   get Card() { return create('i', { class: 'bi bi-credit-card-fill' }) },
-   get ID() { return create('i', { class: 'bi bi-person-vcard-fill' }) },
-   get Bag() { return create('i', { class: 'bi bi-bag-fill' }) },
-   get Briefcase() { return create('i', { class: 'bi bi-briefcase-fill' }) },
-   get Wrench() { return create('i', { class: 'bi bi-wrench-adjustable' }) },
-   get Coin() { return create('i', { class: 'bi bi-coin' }) },
-   get CashCoin() { return create('i', { class: 'bi bi-cash-coin' }) },
-   get Vault() { return create('i', { class: 'bi bi-safe2-fill' }) },
-   get Upload() { return create('i', { class: 'bi bi-cloud-arrow-up-fill' }) },
-   get Upload2() { return create('i', { class: 'bi bi-cloud-upload-fill' }) },
-   get Download() { return create('i', { class: 'bi bi-cloud-arrow-down-fill' }) },
-   get Download2() { return create('i', { class: 'bi bi-cloud-download-fill' }) },
-   get PieChart() { return create('i', { class: 'bi bi-pie-chart-fill' }) },
-   get BarChart() { return create('i', { class: 'bi bi-bar-chart-line-fill' }) },
-   get NestedList() { return create('i', { class: 'bi bi-list-nested' }) },
-   get Bookmarks() { return create('i', { class: 'bi bi-bookmarks-fill' }) },
+   get Plus() { return create('i', { class: 'bi-plus-lg' }) },
+   get Minus() { return create('i', { class: 'bi-dash-lg' }) },
+   get Check() { return create('i', { class: 'bi-check-lg' }) },
+   get Cross() { return create('i', { class: 'bi-x-lg' }) },
+   get Edit() { return create('i', { class: 'bi-pencil-fill' }) },
+   get Save() { return create('i', { class: 'bi-floppy-fill' }) },
+   get Trash() { return create('i', { class: 'bi-trash-fill' }) },
+   get Nametag() { return create('i', { class: 'bi-tag-fill' }) },
+   get Person() { return create('i', { class: 'bi-person-fill' }) },
+   get Dollar() { return create('i', { class: 'bi-currency-dollar' }) },
+   get Card() { return create('i', { class: 'bi-credit-card-fill' }) },
+   get ID() { return create('i', { class: 'bi-person-vcard-fill' }) },
+   get Bag() { return create('i', { class: 'bi-bag-fill' }) },
+   get Briefcase() { return create('i', { class: 'bi-briefcase-fill' }) },
+   get Wrench() { return create('i', { class: 'bi-wrench-adjustable' }) },
+   get Coin() { return create('i', { class: 'bi-coin' }) },
+   get CashCoin() { return create('i', { class: 'bi-cash-coin' }) },
+   get CashStack() { return create('i', { class: 'bi-cash-stack' }) },
+   get Vault() { return create('i', { class: 'bi-safe2-fill' }) },
+   get Upload() { return create('i', { class: 'bi-cloud-arrow-up-fill' }) },
+   get Upload2() { return create('i', { class: 'bi-cloud-upload-fill' }) },
+   get Download() { return create('i', { class: 'bi-cloud-arrow-down-fill' }) },
+   get Download2() { return create('i', { class: 'bi-cloud-download-fill' }) },
+   get PieChart() { return create('i', { class: 'bi-pie-chart-fill' }) },
+   get BarChart() { return create('i', { class: 'bi-bar-chart-line-fill' }) },
+   get NestedList() { return create('i', { class: 'bi-list-nested' }) },
+   get Bookmarks() { return create('i', { class: 'bi-bookmarks-fill' }) },
+   get QuestionMarkCloud() { return create('i', { class: 'bi-patch-question-fill' }) },
+   get Bidirectional() { return create('i', { class: 'bi-arrow-left-right' }) },
 }
 
 export const Buttons = {
@@ -81,7 +95,8 @@ export function resetForm(form: HTMLElement) {
 }
 
 export function goToElement(element?: HTMLElement) {
-   if (element) {
+   if (element && document.contains(element)) {
+      console.log('Going to element:', element);
       // Get element's position and dimensions for the overlay
       const rect = element.getBoundingClientRect();
 

@@ -16,6 +16,12 @@ export abstract class Entry {
       this.row = create('tr', { id: this.uuid })
    }
 
+
+   abstract createLink(): HTMLAnchorElement
+   static unknownLink(): HTMLAnchorElement {
+      return create('a', { class: 'text-danger' }, 'Unknown')
+   }
+
    abstract build(editMode?: boolean): HTMLTableRowElement
    abstract edit(): void
    abstract delete(): void

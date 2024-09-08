@@ -6,6 +6,18 @@ body {
    padding: 0;
 }
 
+a {
+   text-decoration: none;
+   cursor: pointer;
+}
+
+select,
+input.is-valid,
+input.is-invalid {
+   background-image: unset !important;
+   padding: .375rem .75rem !important;
+}
+
 table.table > tbody {
    vertical-align: middle;
 }
@@ -57,13 +69,13 @@ th.fit, td.fit {
 }
 
 .monospace {
-   font-family: "Segoe UI Mono W10 Regular", monospace;
+   font-family: "Segoe UI Mono W10 Regular", monospace !important;
 }
 
 .positive {
-   color: rgb(50, 255, 50);
+   color: rgb(50, 255, 50) !important;
 }
 
 .negative {
-   color: rgb(255, 50, 50);
+   color: rgb(255, 50, 50) !important;
 }

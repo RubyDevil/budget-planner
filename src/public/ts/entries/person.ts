@@ -22,6 +22,10 @@ export class Person extends Entry {
       this.name = data.name
    }
 
+   createLink(): HTMLAnchorElement {
+      return create('a', { class: 'text-primary' }, [Icons.Person, ' ' + this.name])
+   }
+
    build() {
       this.row.innerHTML = ''
       // Name
@@ -63,7 +67,7 @@ export class Person extends Entry {
       row.innerHTML = ''
       // Name
       const nameInput = row.insertCell()
-         .appendChild(createInputGroup(Icons.Nametag))
+         // .appendChild(createInputGroup(Icons.Nametag))
          .appendChild(create('input', {
             class: 'form-control',
             type: 'text',
@@ -113,7 +117,7 @@ export class Person extends Entry {
 
    static generateSelectOptions(budget: Budget, select: HTMLSelectElement) {
       select.innerHTML = ''
-      select.options.add(create('option', { value: '', selected: '', disabled: '', hidden: '' }, 'Select...'))
+      select.options.add(create('option', { value: '', selected: '', disabled: '', hidden: '' }, 'Person'))
       for (const person of budget.people.values())
          select.options.add(create('option', { value: person.uuid }, person.name))
    }

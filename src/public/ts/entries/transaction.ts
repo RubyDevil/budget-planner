@@ -8,7 +8,8 @@ export interface TransactionJson extends EntryJson {
    category_uuid: string
    name: string
    amount: number
-   payment_method_uuid: string
+   payment_method_uuid: string,
+   billing_cycle: [number, 'day' | 'week' | 'month' | 'year']
 }
 
 export class Transaction extends Entry {
@@ -16,21 +17,23 @@ export class Transaction extends Entry {
       Name: {
          MinLength: 3,
          MaxLength: 25
+      },
+      BillingCycle: {
+         Min: 1
       }
    }
 
    category_uuid: string
-   get category() {
-      return this.budget.categories.get(this.category_uuid)
-   }
    name: string
    #amount: number
+   payment_method_uuid: string
+   billing_cycle: TransactionJson['billing_cycle']
+
    get amount() { return this.#amount }
    set amount(value) { this.#amount = Math.round(value * 100) / 100 }
-   payment_method_uuid: string
-   get paymentMethod() {
-      return this.budget.paymentMethods.get(this.payment_method_uuid)
-   }
+
+   get category() { return this.budget.categories.get(this.category_uuid) }
+   get paymentMethod() { return this.budget.paymentMethods.get(this.payment_method_uuid) }
 
    constructor(budget: Budget, data: TransactionJson) {
       super(budget, data)
@@ -38,14 +41,18 @@ export class Transaction extends Entry {
       this.name = data.name
       this.amount = data.amount
       this.payment_method_uuid = data.payment_method_uuid
+      this.billing_cycle = data.billing_cycle
+   }
+
+   createLink(): HTMLAnchorElement {
+      return create('a', { class: 'text-primary' }, [Icons.Bidirectional, ' ' + this.name])
    }
 
    build() {
       this.row.innerHTML = ''
-      // Category
-      this.row.insertCell().appendChild(create('a', { href: '#' }, this.category?.name))
+      // Name and Category
+      this.row.insertCell().appendChild(this.category?.createLink() ?? Entry.unknownLink())
          .addEventListener('click', (e) => goToElement(this.category?.row))
-      // Name
       this.row.insertCell().textContent = this.name
       // Amount
       const isPositive = this.amount >= 0
@@ -53,12 +60,14 @@ export class Transaction extends Entry {
       const amount = Math.abs(this.amount)
       this.row.insertCell().append(create(
          'span',
-         { class: 'monospace ' + (isPositive ? 'positive' : 'negative') },
+         { class: 'monospace ' + (isPositive ? 'text-success' : 'text-danger') },
          `${sign}$${amount.toFixed(2)}`
       ))
       // Payment Method
-      this.row.insertCell().appendChild(create('a', { href: '#' }, this.paymentMethod?.name))
+      this.row.insertCell().appendChild(this.paymentMethod?.createLink() ?? Entry.unknownLink())
          .addEventListener('click', (e) => goToElement(this.paymentMethod?.row))
+      // Billing Cycle
+      this.row.insertCell().textContent = `${this.billing_cycle[0]} ${this.billing_cycle[1] + (this.billing_cycle[0] > 1 ? 's' : '')}`
       // Actions
       const actions = this.row.insertCell().appendChild(create('span', { class: 'd-flex gap-2' }))
       actions.appendChild(Buttons.Edit).addEventListener('click', () => this.edit())
@@ -94,7 +103,8 @@ export class Transaction extends Entry {
          category_uuid: this.category_uuid,
          name: this.name,
          amount: this.amount,
-         payment_method_uuid: this.payment_method_uuid
+         payment_method_uuid: this.payment_method_uuid,
+         billing_cycle: this.billing_cycle
       }
    }
 
@@ -102,14 +112,13 @@ export class Transaction extends Entry {
       row.innerHTML = ''
       // Category
       const categorySelect = row.insertCell()
-         .appendChild(createInputGroup(Icons.Bookmarks))
+         // .appendChild(createInputGroup(Icons.Bookmarks))
          .appendChild(create('select', { class: 'form-control' }))
       Category.generateSelectOptions(budget, categorySelect)
       categorySelect.addEventListener('focusin', (e) => Category.generateSelectOptions(budget, categorySelect))
       categorySelect.addEventListener('change', this.validateForm.bind(this, row))
       // Name
       const nameInput = row.insertCell()
-         .appendChild(createInputGroup(Icons.Nametag))
          .appendChild(create('input', {
             class: 'form-control',
             type: 'text',
@@ -119,7 +128,6 @@ export class Transaction extends Entry {
       Tooltips.create(nameInput, 'bottom', `${this.Constraints.Name.MinLength} to ${this.Constraints.Name.MaxLength} characters`)
       // Amount
       const amountInput = row.insertCell()
-         .appendChild(createInputGroup(Icons.Dollar))
          .appendChild(create('input', {
             class: 'form-control',
             type: 'number',
@@ -130,11 +138,28 @@ export class Transaction extends Entry {
       Tooltips.create(amountInput, 'bottom', 'Non-zero amount, negative for expenses and positive for income')
       // Payment Method
       const paymentMethodSelect = row.insertCell()
-         .appendChild(createInputGroup(Icons.Card))
          .appendChild(create('select', { class: 'form-control' }))
       PaymentMethod.generateSelectOptions(budget, paymentMethodSelect)
       paymentMethodSelect.addEventListener('focusin', (e) => PaymentMethod.generateSelectOptions(budget, paymentMethodSelect))
       paymentMethodSelect.addEventListener('change', this.validateForm.bind(this, row))
+      // Billing Cycle
+      const group = row.insertCell().appendChild(create('div', { class: 'input-group' }))
+      const cycleInput = group
+         .appendChild(create('input', {
+            class: 'form-control',
+            type: 'number',
+            placeholder: 'Count',
+            step: '1',
+            min: '1'
+         }))
+      cycleInput.addEventListener('input', this.validateForm.bind(this, row))
+      Tooltips.create(cycleInput, 'bottom', 'Number of days, weeks, months, or years. Must be greater than 0.')
+      const cycleSelect = group.appendChild(create('select', { class: 'form-select' }))
+      cycleSelect.options.add(create('option', { value: '', selected: '', disabled: '', hidden: '' }, 'Cycle'))
+      cycleSelect.options.add(create('option', { value: 'day' }, 'day'))
+      cycleSelect.options.add(create('option', { value: 'week' }, 'week'))
+      cycleSelect.options.add(create('option', { value: 'month' }, 'month'))
+      cycleSelect.options.add(create('option', { value: 'year' }, 'year'))
       // Actions
       const actions = row.insertCell().appendChild(create('span', { class: 'd-flex gap-2' }))
       if (targetListOrEntry instanceof Transaction) {
@@ -151,7 +176,8 @@ export class Transaction extends Entry {
                   category_uuid: categorySelect.value,
                   name: nameInput.value,
                   amount: parseFloat(amountInput.value),
-                  payment_method_uuid: paymentMethodSelect.value
+                  payment_method_uuid: paymentMethodSelect.value,
+                  billing_cycle: [1, 'month'] // TODO Change this to be user-defined
                }))
                budget.refreshAll()
                resetForm(row)
@@ -173,17 +199,21 @@ export class Transaction extends Entry {
          form.cells[0].getElementsByTagName('select')[0], // categorySelect
          form.cells[1].getElementsByTagName('input')[0], // nameInput
          form.cells[2].getElementsByTagName('input')[0], // amountInput
-         form.cells[3].getElementsByTagName('select')[0] // paymentMethodSelect
+         form.cells[3].getElementsByTagName('select')[0], // paymentMethodSelect
+         form.cells[4].getElementsByTagName('input')[0], // cycleInput
+         form.cells[4].getElementsByTagName('select')[0] // cycleSelect
       ]
    }
 
    static validateForm(form: HTMLTableRowElement) {
-      const [categorySelect, nameInput, amountInput, paymentMethodSelect] = this.getFields(form)
+      const [categorySelect, nameInput, amountInput, paymentMethodSelect, cycleInput, cycleSelect] = this.getFields(form)
       const results: [HTMLElement, boolean][] = []
       results.push([categorySelect, categorySelect.value !== ''])
       results.push([nameInput, nameInput.value.trim().length >= Transaction.Constraints.Name.MinLength && nameInput.value.trim().length <= Transaction.Constraints.Name.MaxLength])
       results.push([amountInput, !isNaN(+amountInput.value) && +amountInput.value !== 0])
       results.push([paymentMethodSelect, paymentMethodSelect.value !== ''])
+      results.push([cycleInput, +cycleInput.value >= Transaction.Constraints.BillingCycle.Min])
+      results.push([cycleSelect, cycleSelect.value !== ''])
       for (const [element, valid] of results) {
          element.classList.toggle('is-invalid', !valid)
          element.classList.toggle('is-valid', valid)
@@ -193,7 +223,7 @@ export class Transaction extends Entry {
 
    static generateSelectOptions(budget: Budget, select: HTMLSelectElement) {
       select.innerHTML = ''
-      select.options.add(create('option', { value: '', selected: '', disabled: '', hidden: '' }, 'Select...'))
+      select.options.add(create('option', { value: '', selected: '', disabled: '', hidden: '' }, 'Transaction'))
       for (const transaction of budget.transactions.values())
          select.options.add(create('option', { value: transaction.uuid }, transaction.name))
    }

@@ -25,18 +25,18 @@ export class Category extends Entry {
       this.name = data.name
    }
 
+   createIcon(): HTMLElement {
+      return create('i', { class: this.icon })
+   }
+
+   createLink(): HTMLAnchorElement {
+      return create('a', { class: 'text-primary' }, [this.createIcon(), ' ' + this.name])
+   }
+
    build() {
       this.row.innerHTML = ''
-      // Icon
-      this.row.insertCell().appendChild(
-         create('div', { class: 'input-group' }, [
-            create('span', { class: 'input-group-text' }, [
-               create('i', { class: this.icon })
-            ])
-         ])
-      )
-      // Name
-      this.row.insertCell().textContent = this.name
+      // Name and Icon
+      this.row.append(create('td', { colspan: 2 }, [this.createIcon(), ' ' + this.name]))
       // Actions
       const actions = this.row.insertCell().appendChild(create('span', { class: 'd-flex gap-2' }))
       actions.appendChild(Buttons.Edit).addEventListener('click', () => this.edit())
@@ -74,16 +74,15 @@ export class Category extends Entry {
 
    static buildForm(row: HTMLTableRowElement, budget: Budget, editTarget?: Category) {
       row.innerHTML = ''
-      // Icon
-      const iconSelect = row.insertCell()
-         .appendChild(createInputGroup(Icons.Bookmarks))
+      // Name and Icon
+      const group = row.appendChild(create('td', { colspan: 2 })).appendChild(create('div', { class: 'input-group' }))
+      const iconSelect = group
          .appendChild(create('select', { class: 'form-select' }))
-      iconSelect.options.add(create('option', { value: '', selected: '', disabled: '', hidden: '' }, 'Select...'))
+      iconSelect.options.add(create('option', { value: '', selected: '', disabled: '', hidden: '' }, 'Icon'))
       for (const [name, icon] of Object.entries(Icons))
          iconSelect.options.add(create('option', { value: icon.classList[1] }, name))
-      // Name
-      const nameInput = row.insertCell()
-         .appendChild(createInputGroup(Icons.Nametag))
+      iconSelect.addEventListener('change', this.validateForm.bind(this, row))
+      const nameInput = group
          .appendChild(create('input', {
             class: 'form-control',
             type: 'text',
@@ -113,6 +112,7 @@ export class Category extends Entry {
       }
       // Data
       if (editTarget) {
+         iconSelect.value = editTarget.icon
          nameInput.value = editTarget.name
       }
       return row
@@ -121,15 +121,15 @@ export class Category extends Entry {
    static getFields(form: HTMLTableRowElement) {
       return [
          form.cells[0].getElementsByTagName('select')[0], // iconSelect
-         form.cells[1].getElementsByTagName('input')[0] // nameInput
+         form.cells[0].getElementsByTagName('input')[0] // nameInput
       ]
    }
 
    static validateForm(form: HTMLTableRowElement) {
       const [iconSelect, nameInput] = this.getFields(form)
       const results: [HTMLElement, boolean][] = []
-      results.push([nameInput, nameInput.value.trim().length >= Category.Constraints.Name.MinLength && nameInput.value.trim().length <= Category.Constraints.Name.MaxLength])
       results.push([iconSelect, iconSelect.value !== ''])
+      results.push([nameInput, nameInput.value.trim().length >= Category.Constraints.Name.MinLength && nameInput.value.trim().length <= Category.Constraints.Name.MaxLength])
       for (const [element, valid] of results) {
          element.classList.toggle('is-invalid', !valid)
          element.classList.toggle('is-valid', valid)
@@ -139,8 +139,7 @@ export class Category extends Entry {
 
    static generateSelectOptions(budget: Budget, select: HTMLSelectElement) {
       select.innerHTML = ''
-      select.options.add(create('option', { value: '', selected: '', disabled: '', hidden: '' }, 'Select...'))
-      console.log(budget.categories)
+      select.options.add(create('option', { value: '', selected: '', disabled: '', hidden: '' }, 'Category'))
       for (const category of budget.categories.values())
          select.options.add(create('option', { value: category.uuid }, category.name))
    }
