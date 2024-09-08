@@ -1,15 +1,10 @@
-import { Entry } from "./entries/entry.js"
+import { Category } from "./entries/category.js"
 import { PaymentMethod } from "./entries/payment-method.js"
 import { Person } from "./entries/person.js"
 import { Transaction } from "./entries/transaction.js"
-import { Buttons, create, Icons, Tooltips } from "./utils.js"
+import { create, Icons } from "./utils.js"
 
 export class Budget {
-   summaryDisplay: HTMLDivElement
-   summaryLegend: HTMLDivElement
-   summaryProgress: HTMLDivElement
-   updateSummary: () => void
-
    people: Map<string, Person>
    peopleTable: HTMLTableElement
    peopleTHead: HTMLTableSectionElement
@@ -24,19 +19,27 @@ export class Budget {
    paymentMethodsForm: HTMLTableRowElement
    refreshPaymentMethods: () => void
 
-   salaries: Map<string, Transaction>
-   salariesTable: HTMLTableElement
-   salariesTHead: HTMLTableSectionElement
-   salariesTBody: HTMLTableSectionElement
-   salariesForm: HTMLTableRowElement
-   refreshSalaries: () => void
+   categories: Map<string, Category>
+   categoriesTable: HTMLTableElement
+   categoriesTHead: HTMLTableSectionElement
+   categoriesTBody: HTMLTableSectionElement
+   categoriesForm: HTMLTableRowElement
+   refreshCategories: () => void
 
-   bills: Map<string, Transaction>
-   billsTable: HTMLTableElement
-   billsTHead: HTMLTableSectionElement
-   billsTBody: HTMLTableSectionElement
-   billsForm: HTMLTableRowElement
+   transactions: Map<string, Transaction>
+   transactionsTable: HTMLTableElement
+   transactionsTHead: HTMLTableSectionElement
+   transactionsTBody: HTMLTableSectionElement
+   transactionsForm: HTMLTableRowElement
    refreshTransactions: () => void
+
+   summaryDisplay: HTMLDivElement
+   summaryLegend: HTMLDivElement
+   summaryProgress: HTMLDivElement
+   summaryDeductionsTable: HTMLTableElement
+   summaryDeductionsTHead: HTMLTableSectionElement
+   summaryDeductionsTBody: HTMLTableSectionElement
+   refreshSummary: () => void
 
    refreshAll: () => void
 
@@ -44,44 +47,12 @@ export class Budget {
    uploadButton: HTMLButtonElement
 
    constructor() {
-      // Summary
-      this.summaryDisplay = create('div', { class: 'd-flex flex-column gap-2 my-3' })
-      this.summaryLegend = this.summaryDisplay.appendChild(create('div', { class: 'd-flex justify-content-around align-items-center w-100' }))
-      this.summaryProgress = this.summaryDisplay.appendChild(create('div', { class: 'progress-stacked', style: 'height: 2em' }))
-      this.updateSummary = () => {
-         const totalSalaries = [...this.salaries.values()].reduce((sum, salary) => sum + salary.amount, 0)
-         const totalBills = [...this.bills.values()].reduce((sum, bill) => sum + bill.amount, 0)
-         const totalNet = totalSalaries + totalBills
-         const totalTotals = Math.abs(totalSalaries) + Math.abs(totalBills) + Math.abs(totalNet)
-         // Legend
-         this.summaryLegend.innerHTML = ''
-         this.summaryLegend.append(
-            create('span', { class: 'fw-bold' }, [
-               create('span', { class: 'text-success' }, [Icons.PieChart]), ` Salaries ($${(totalSalaries).toFixed(2)})`
-            ]),
-            create('span', { class: 'fw-bold' }, [
-               create('span', { class: 'text-danger' }, [Icons.PieChart]), ` Bills ($${totalBills.toFixed(2)})`
-            ]),
-            create('span', { class: 'fw-bolder' }, [
-               create('span', { class: 'text-warning' }, [Icons.PieChart]), ` Net ($${totalNet.toFixed(2)})`
-            ])
-         )
-         // Progress Bar
-         this.summaryProgress.innerHTML = ''
-         const percentSalaries = Math.abs(totalSalaries) / (totalTotals || 1) * 100
-         const percentBills = Math.abs(totalBills) / (totalTotals || 1) * 100
-         const percentNet = Math.abs(totalNet) / (totalTotals || 1) * 100
-         this.summaryProgress.append(
-            create('div', { class: 'progress-bar bg-success', style: `width: ${percentSalaries}%` }, 'Salaries'),
-            create('div', { class: 'progress-bar bg-danger', style: `width: ${percentBills}%` }, 'Bills'),
-            create('div', { class: 'progress-bar bg-warning', style: `width: ${percentNet}%` }, 'Net')
-         )
-      }
       // People
       this.people = new Map()
-      this.peopleTable = create('table', { class: 'table table-striped' })
+      this.peopleTable = create('table', { class: 'table table-hover' })
       this.peopleTHead = this.peopleTable.createTHead()
       this.peopleTBody = this.peopleTable.createTBody()
+      this.peopleTBody.classList.add('table-group-divider')
       this.peopleTHead.appendChild(create('tr')).append(
          create('th', { scope: 'col' }, 'Name'),
          create('th', { scope: 'col', class: 'fit' }, 'Actions')
@@ -96,9 +67,10 @@ export class Budget {
       }
       // Payment Methods
       this.paymentMethods = new Map()
-      this.paymentMethodsTable = create('table', { class: 'table table-striped' })
+      this.paymentMethodsTable = create('table', { class: 'table table-hover' })
       this.paymentMethodsTHead = this.paymentMethodsTable.createTHead()
       this.paymentMethodsTBody = this.paymentMethodsTable.createTBody()
+      this.paymentMethodsTBody.classList.add('table-group-divider')
       this.paymentMethodsTHead.appendChild(create('tr')).append(
          create('th', { scope: 'col' }, 'Name'),
          create('th', { scope: 'col' }, 'Owner'),
@@ -112,51 +84,95 @@ export class Budget {
             this.paymentMethodsTBody.append(paymentMethod.build())
          this.paymentMethodsTBody.append(this.paymentMethodsForm)
       }
-      // Salaries
-      this.salaries = new Map()
-      this.salariesTable = create('table', { class: 'table table-striped' })
-      this.salariesTHead = this.salariesTable.createTHead()
-      this.salariesTBody = this.salariesTable.createTBody()
-      this.salariesTHead.appendChild(create('tr')).append(
+      // Categories
+      this.categories = new Map()
+      this.categoriesTable = create('table', { class: 'table table-hover' })
+      this.categoriesTHead = this.categoriesTable.createTHead()
+      this.categoriesTBody = this.categoriesTable.createTBody()
+      this.categoriesTBody.classList.add('table-group-divider')
+      this.categoriesTHead.appendChild(create('tr')).append(
+         create('th', { scope: 'col' }, 'Icon'),
          create('th', { scope: 'col' }, 'Name'),
-         create('th', { scope: 'col' }, 'Amount'),
-         create('th', { scope: 'col' }, 'Deposited To'),
          create('th', { scope: 'col', class: 'fit' }, 'Actions')
       )
-      this.salariesForm = create('tr')
-      Transaction.buildForm(this.salariesForm, this, this.salaries)
-      this.refreshSalaries = () => {
-         this.salariesTBody.innerHTML = ''
-         for (const salary of this.salaries.values())
-            this.salariesTBody.append(salary.build())
-         this.salariesTBody.append(this.salariesForm)
+      this.categoriesForm = create('tr')
+      Category.buildForm(this.categoriesForm, this)
+      this.refreshCategories = () => {
+         this.categoriesTBody.innerHTML = ''
+         for (const category of this.categories.values())
+            this.categoriesTBody.append(category.build())
+         this.categoriesTBody.append(this.categoriesForm)
       }
-      // Bills
-      this.bills = new Map()
-      this.billsTable = create('table', { class: 'table table-striped' })
-      this.billsTHead = this.billsTable.createTHead()
-      this.billsTBody = this.billsTable.createTBody()
-      this.billsTHead.appendChild(create('tr')).append(
+      // Transactions
+      this.transactions = new Map()
+      this.transactionsTable = create('table', { class: 'table table-hover' })
+      this.transactionsTHead = this.transactionsTable.createTHead()
+      this.transactionsTBody = this.transactionsTable.createTBody()
+      this.transactionsTBody.classList.add('table-group-divider')
+      this.transactionsTHead.appendChild(create('tr')).append(
+         create('th', { scope: 'col' }, 'Category'),
          create('th', { scope: 'col' }, 'Name'),
          create('th', { scope: 'col' }, 'Amount'),
-         create('th', { scope: 'col' }, 'Billed From'),
+         create('th', { scope: 'col' }, 'Payment Method'),
          create('th', { scope: 'col', class: 'fit' }, 'Actions')
       )
-      this.billsForm = create('tr')
-      Transaction.buildForm(this.billsForm, this, this.bills)
+      this.transactionsForm = create('tr')
+      Transaction.buildForm(this.transactionsForm, this, this.transactions)
       this.refreshTransactions = () => {
-         this.billsTBody.innerHTML = ''
-         for (const transaction of this.bills.values())
-            this.billsTBody.append(transaction.build())
-         this.billsTBody.append(this.billsForm)
+         this.transactionsTBody.innerHTML = ''
+         for (const transaction of this.transactions.values())
+            this.transactionsTBody.append(transaction.build())
+         this.transactionsTBody.append(this.transactionsForm)
+      }
+      // Summary
+      this.summaryDisplay = create('div', { class: 'd-flex flex-column gap-2 my-3' })
+      this.summaryLegend = this.summaryDisplay.appendChild(create('div', { class: 'd-flex justify-content-around align-items-center w-100' }))
+      this.summaryProgress = this.summaryDisplay.appendChild(create('div', { class: 'progress-stacked', style: 'height: 2em' }))
+      this.summaryDeductionsTable = create('table', { class: 'table table-hover table-borderless table-sm' })
+      this.summaryDeductionsTHead = this.summaryDeductionsTable.createTHead()
+      this.summaryDeductionsTBody = this.summaryDeductionsTable.createTBody()
+      this.summaryDeductionsTBody.classList.add('table-group-divider')
+      this.summaryDeductionsTHead.appendChild(create('tr')).append(
+         create('th', { scope: 'col' }, 'Deduction'),
+         create('th', { scope: 'col' }, 'Amount'),
+         create('th', { scope: 'col', class: 'fit' }, 'Remaining'),
+      )
+      this.refreshSummary = () => {
+         // const totalSalaries = [...this.salaries.values()].reduce((sum, salary) => sum + salary.amount, 0)
+         // const totalBills = [...this.transactions.values()].reduce((sum, bill) => sum + bill.amount, 0)
+         // const totalNet = totalSalaries + totalBills
+         // const totalTotals = Math.abs(totalSalaries) + Math.abs(totalBills) + Math.abs(totalNet)
+         // // Legend
+         // this.summaryLegend.innerHTML = ''
+         // this.summaryLegend.append(
+         //    create('span', { class: 'fw-bold' }, [
+         //       create('span', { class: 'text-success' }, [Icons.PieChart]), ` Salaries ($${(totalSalaries).toFixed(2)})`
+         //    ]),
+         //    create('span', { class: 'fw-bold' }, [
+         //       create('span', { class: 'text-danger' }, [Icons.PieChart]), ` Bills ($${totalBills.toFixed(2)})`
+         //    ]),
+         //    create('span', { class: 'fw-bolder' }, [
+         //       create('span', { class: 'text-secondary' }, [Icons.PieChart]), ` Remaining ($${totalNet.toFixed(2)})`
+         //    ])
+         // )
+         // // Progress Bar
+         // this.summaryProgress.innerHTML = ''
+         // const percentSalaries = Math.abs(totalSalaries) / (totalTotals || 1) * 100
+         // const percentBills = Math.abs(totalBills) / (totalTotals || 1) * 100
+         // const percentNet = Math.abs(totalNet) / (totalTotals || 1) * 100
+         // this.summaryProgress.append(
+         //    create('div', { class: 'progress-bar bg-success', style: `width: ${percentSalaries}%` }, 'Salaries'),
+         //    create('div', { class: 'progress-bar bg-danger', style: `width: ${percentBills}%` }, 'Bills'),
+         //    create('div', { class: 'progress-bar bg-secondary', style: `width: ${percentNet}%` }, 'Remaining')
+         // )
       }
       // Refresh All
       this.refreshAll = () => {
          this.refreshPeople()
          this.refreshPaymentMethods()
-         this.refreshSalaries()
+         this.refreshCategories()
          this.refreshTransactions()
-         this.updateSummary()
+         this.refreshSummary()
       }
       // Buttons
       this.downloadButton = create('button', { class: 'btn btn-outline-primary ' }, [Icons.Download, ' Download'])
@@ -164,8 +180,7 @@ export class Budget {
          const data = {
             people: [...this.people.values()].map(person => person.toJson()),
             paymentMethods: [...this.paymentMethods.values()].map(paymentMethod => paymentMethod.toJson()),
-            salaries: [...this.salaries.values()].map(salary => salary.toJson()),
-            bills: [...this.bills.values()].map(bill => bill.toJson())
+            transactions: [...this.transactions.values()].map(transaction => transaction.toJson())
          }
          const blob = new Blob([JSON.stringify(data)], { type: 'application/json' })
          const url = URL.createObjectURL(blob)
@@ -186,10 +201,8 @@ export class Budget {
                      this.people.set(person.uuid, new Person(this, person))
                   for (const paymentMethod of data.paymentMethods)
                      this.paymentMethods.set(paymentMethod.uuid, new PaymentMethod(this, paymentMethod))
-                  for (const salary of data.salaries)
-                     this.salaries.set(salary.uuid, new Transaction(this, salary))
-                  for (const bill of data.bills)
-                     this.bills.set(bill.uuid, new Transaction(this, bill))
+                  for (const transaction of data.transactions)
+                     this.transactions.set(transaction.uuid, new Transaction(this, transaction))
                   this.refreshAll()
                }
                reader.readAsText(file)
@@ -197,5 +210,7 @@ export class Budget {
          })
          input.click()
       })
+      // Refresh
+      this.refreshAll()
    }
 }

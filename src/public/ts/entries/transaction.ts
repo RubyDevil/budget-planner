@@ -1,9 +1,11 @@
 import { Budget } from "../budget"
 import { Buttons, create, createInputGroup, goToElement, Icons, resetForm, Tooltips } from "../utils"
+import { Category } from "./category"
 import { Entry, EntryJson } from "./entry"
 import { PaymentMethod } from "./payment-method"
 
 export interface TransactionJson extends EntryJson {
+   category_uuid: string
    name: string
    amount: number
    payment_method_uuid: string
@@ -17,18 +19,22 @@ export class Transaction extends Entry {
       }
    }
 
+   category_uuid: string
+   get category() {
+      return this.budget.categories.get(this.category_uuid)
+   }
    name: string
    #amount: number
    get amount() { return this.#amount }
    set amount(value) { this.#amount = Math.round(value * 100) / 100 }
    payment_method_uuid: string
-
    get paymentMethod() {
       return this.budget.paymentMethods.get(this.payment_method_uuid)
    }
 
    constructor(budget: Budget, data: TransactionJson) {
       super(budget, data)
+      this.category_uuid = data.category_uuid
       this.name = data.name
       this.amount = data.amount
       this.payment_method_uuid = data.payment_method_uuid
@@ -36,6 +42,9 @@ export class Transaction extends Entry {
 
    build() {
       this.row.innerHTML = ''
+      // Category
+      this.row.insertCell().appendChild(create('a', { href: '#' }, this.category?.name))
+         .addEventListener('click', (e) => goToElement(this.category?.row))
       // Name
       this.row.insertCell().textContent = this.name
       // Amount
@@ -51,7 +60,7 @@ export class Transaction extends Entry {
       this.row.insertCell().appendChild(create('a', { href: '#' }, this.paymentMethod?.name))
          .addEventListener('click', (e) => goToElement(this.paymentMethod?.row))
       // Actions
-      const actions = this.row.insertCell().appendChild(create('span', { class: 'd-flex gap-1' }))
+      const actions = this.row.insertCell().appendChild(create('span', { class: 'd-flex gap-2' }))
       actions.appendChild(Buttons.Edit).addEventListener('click', () => this.edit())
       actions.appendChild(Buttons.Delete).addEventListener('click', () => this.delete())
       return this.row
@@ -63,7 +72,8 @@ export class Transaction extends Entry {
 
    save() {
       if (Transaction.validateForm(this.row)) {
-         const [nameInput, amountInput, paymentMethodSelect] = Transaction.getFields(this.row)
+         const [categorySelect, nameInput, amountInput, paymentMethodSelect] = Transaction.getFields(this.row)
+         this.category_uuid = categorySelect.value
          this.name = nameInput.value
          this.amount = parseFloat(amountInput.value)
          this.payment_method_uuid = paymentMethodSelect.value
@@ -73,7 +83,7 @@ export class Transaction extends Entry {
 
    delete() {
       if (confirm('Are you sure you want to delete this entry?')) {
-         this.budget.bills.delete(this.uuid)
+         this.budget.transactions.delete(this.uuid)
          this.budget.refreshAll()
       }
    }
@@ -81,6 +91,7 @@ export class Transaction extends Entry {
    toJson(): TransactionJson {
       return {
          uuid: this.uuid,
+         category_uuid: this.category_uuid,
          name: this.name,
          amount: this.amount,
          payment_method_uuid: this.payment_method_uuid
@@ -89,6 +100,13 @@ export class Transaction extends Entry {
 
    static buildForm(row: HTMLTableRowElement, budget: Budget, targetListOrEntry?: Map<string, Transaction> | Transaction) {
       row.innerHTML = ''
+      // Category
+      const categorySelect = row.insertCell()
+         .appendChild(createInputGroup(Icons.Bookmarks))
+         .appendChild(create('select', { class: 'form-control' }))
+      Category.generateSelectOptions(budget, categorySelect)
+      categorySelect.addEventListener('focusin', (e) => Category.generateSelectOptions(budget, categorySelect))
+      categorySelect.addEventListener('change', this.validateForm.bind(this, row))
       // Name
       const nameInput = row.insertCell()
          .appendChild(createInputGroup(Icons.Nametag))
@@ -118,7 +136,7 @@ export class Transaction extends Entry {
       paymentMethodSelect.addEventListener('focusin', (e) => PaymentMethod.generateSelectOptions(budget, paymentMethodSelect))
       paymentMethodSelect.addEventListener('change', this.validateForm.bind(this, row))
       // Actions
-      const actions = row.insertCell().appendChild(create('span', { class: 'd-flex gap-1' }))
+      const actions = row.insertCell().appendChild(create('span', { class: 'd-flex gap-2' }))
       if (targetListOrEntry instanceof Transaction) {
          actions.appendChild(Buttons.Save).addEventListener('click', () => targetListOrEntry.save())
          actions.appendChild(Buttons.Cancel).addEventListener('click', () => targetListOrEntry.build())
@@ -130,6 +148,7 @@ export class Transaction extends Entry {
                const uuid = crypto.randomUUID()
                targetListOrEntry.set(uuid, new this(budget, {
                   uuid: uuid,
+                  category_uuid: categorySelect.value,
                   name: nameInput.value,
                   amount: parseFloat(amountInput.value),
                   payment_method_uuid: paymentMethodSelect.value
@@ -141,6 +160,7 @@ export class Transaction extends Entry {
       }
       // Data
       if (targetListOrEntry instanceof Transaction) {
+         categorySelect.value = targetListOrEntry.category_uuid
          nameInput.value = targetListOrEntry.name
          amountInput.value = targetListOrEntry.amount.toString()
          paymentMethodSelect.value = targetListOrEntry.payment_method_uuid
@@ -150,15 +170,17 @@ export class Transaction extends Entry {
 
    static getFields(form: HTMLTableRowElement) {
       return [
-         form.cells[0].getElementsByTagName('input')[0], // nameInput
-         form.cells[1].getElementsByTagName('input')[0], // amountInput
-         form.cells[2].getElementsByTagName('select')[0] // paymentMethodSelect
+         form.cells[0].getElementsByTagName('select')[0], // categorySelect
+         form.cells[1].getElementsByTagName('input')[0], // nameInput
+         form.cells[2].getElementsByTagName('input')[0], // amountInput
+         form.cells[3].getElementsByTagName('select')[0] // paymentMethodSelect
       ]
    }
 
    static validateForm(form: HTMLTableRowElement) {
-      const [nameInput, amountInput, paymentMethodSelect] = this.getFields(form)
+      const [categorySelect, nameInput, amountInput, paymentMethodSelect] = this.getFields(form)
       const results: [HTMLElement, boolean][] = []
+      results.push([categorySelect, categorySelect.value !== ''])
       results.push([nameInput, nameInput.value.trim().length >= Transaction.Constraints.Name.MinLength && nameInput.value.trim().length <= Transaction.Constraints.Name.MaxLength])
       results.push([amountInput, !isNaN(+amountInput.value) && +amountInput.value !== 0])
       results.push([paymentMethodSelect, paymentMethodSelect.value !== ''])
@@ -172,7 +194,7 @@ export class Transaction extends Entry {
    static generateSelectOptions(budget: Budget, select: HTMLSelectElement) {
       select.innerHTML = ''
       select.options.add(create('option', { value: '', selected: '', disabled: '', hidden: '' }, 'Select...'))
-      for (const transaction of budget.bills.values())
+      for (const transaction of budget.transactions.values())
          select.options.add(create('option', { value: transaction.uuid }, transaction.name))
    }
 }

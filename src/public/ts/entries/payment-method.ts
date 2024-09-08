@@ -37,7 +37,7 @@ export class PaymentMethod extends Entry {
       this.row.insertCell().appendChild(create('a', { href: '#' }, this.owner?.name))
          .addEventListener('click', (e) => goToElement(this.owner?.row))
       // Actions
-      const actions = this.row.insertCell().appendChild(create('span', { class: 'd-flex gap-1' }))
+      const actions = this.row.insertCell().appendChild(create('span', { class: 'd-flex gap-2' }))
       actions.appendChild(Buttons.Edit).addEventListener('click', () => this.edit())
       actions.appendChild(Buttons.Delete).addEventListener('click', () => this.delete())
       return this.row
@@ -91,7 +91,7 @@ export class PaymentMethod extends Entry {
       ownerSelect.addEventListener('focusin', (e) => Person.generateSelectOptions(budget, ownerSelect))
       ownerSelect.addEventListener('change', this.validateForm.bind(this, row))
       // Actions
-      const actions = row.insertCell().appendChild(create('span', { class: 'd-flex gap-1' }))
+      const actions = row.insertCell().appendChild(create('span', { class: 'd-flex gap-2' }))
       if (editTarget) {
          actions.appendChild(Buttons.Save).addEventListener('click', () => editTarget.save())
          actions.appendChild(Buttons.Cancel).addEventListener('click', () => editTarget.build())

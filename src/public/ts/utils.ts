@@ -41,7 +41,9 @@ export const Icons = {
    get Download() { return create('i', { class: 'bi bi-cloud-arrow-down-fill' }) },
    get Download2() { return create('i', { class: 'bi bi-cloud-download-fill' }) },
    get PieChart() { return create('i', { class: 'bi bi-pie-chart-fill' }) },
-   get BarChart() { return create('i', { class: 'bi bi-bar-chart-line-fill' }) }
+   get BarChart() { return create('i', { class: 'bi bi-bar-chart-line-fill' }) },
+   get NestedList() { return create('i', { class: 'bi bi-list-nested' }) },
+   get Bookmarks() { return create('i', { class: 'bi bi-bookmarks-fill' }) },
 }
 
 export const Buttons = {
