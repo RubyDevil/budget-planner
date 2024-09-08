@@ -1,14 +1,17 @@
+const args = require('yargs').argv
+if (args.h) {
+   console.info('\t--ip\t\tIP address to run the server on')
+   console.info('\t--port\t\tPort number to run the server on')
+   process.exit(0)
+} else if (!args.ip || typeof args.ip !== 'string') {
+   console.error('Please provide an IP address with the --ip flag')
+   process.exit(1)
+}
 // ----- Server -----
-const { db } = require('./private/database')
-const express = require('express')
-const path = require('path')
+import express from 'express'
 
 const app = express()
 
-app.use('/api', express.json(), require('./private/api').router)
+app.use(express.static(require('path').join(__dirname, 'public')))
 
-app.use(express.static(path.join(__dirname, 'public')))
-
-app.listen(8080, () => {
-   console.log('Server is running on port 80')
-})
+app.listen(+args.port || 80, args.ip, () => console.log('Server is running on port 80'))
