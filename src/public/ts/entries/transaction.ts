@@ -67,14 +67,14 @@ export class Transaction extends Entry {
          this.name = nameInput.value
          this.amount = parseFloat(amountInput.value)
          this.payment_method_uuid = paymentMethodSelect.value
-         this.budget.onTransactionsChanged()
+         this.budget.refreshAll()
       }
    }
 
    delete() {
       if (confirm('Are you sure you want to delete this entry?')) {
          this.budget.bills.delete(this.uuid)
-         this.budget.onTransactionsChanged()
+         this.budget.refreshAll()
       }
    }
 
@@ -87,7 +87,7 @@ export class Transaction extends Entry {
       }
    }
 
-   static buildForm(row: HTMLTableRowElement, budget: Budget, editTarget?: Transaction) {
+   static buildForm(row: HTMLTableRowElement, budget: Budget, targetListOrEntry?: Map<string, Transaction> | Transaction) {
       row.innerHTML = ''
       // Name
       const nameInput = row.insertCell()
@@ -119,31 +119,31 @@ export class Transaction extends Entry {
       paymentMethodSelect.addEventListener('change', this.validateForm.bind(this, row))
       // Actions
       const actions = row.insertCell().appendChild(create('span', { class: 'd-flex gap-1' }))
-      if (editTarget) {
-         actions.appendChild(Buttons.Save).addEventListener('click', () => editTarget.save())
-         actions.appendChild(Buttons.Cancel).addEventListener('click', () => editTarget.build())
-      } else {
+      if (targetListOrEntry instanceof Transaction) {
+         actions.appendChild(Buttons.Save).addEventListener('click', () => targetListOrEntry.save())
+         actions.appendChild(Buttons.Cancel).addEventListener('click', () => targetListOrEntry.build())
+      } else if (targetListOrEntry instanceof Map) {
          actions.appendChild(Buttons.Add).addEventListener('click', (e) => {
             // Trim values
             nameInput.value = nameInput.value.trim()
             if (this.validateForm(row)) {
                const uuid = crypto.randomUUID()
-               budget.bills.set(uuid, new this(budget, {
+               targetListOrEntry.set(uuid, new this(budget, {
                   uuid: uuid,
                   name: nameInput.value,
                   amount: parseFloat(amountInput.value),
                   payment_method_uuid: paymentMethodSelect.value
                }))
-               budget.onPaymentMethodsChanged()
+               budget.refreshAll()
                resetForm(row)
             }
          })
       }
       // Data
-      if (editTarget) {
-         nameInput.value = editTarget.name
-         amountInput.value = editTarget.amount.toString()
-         paymentMethodSelect.value = editTarget.payment_method_uuid
+      if (targetListOrEntry instanceof Transaction) {
+         nameInput.value = targetListOrEntry.name
+         amountInput.value = targetListOrEntry.amount.toString()
+         paymentMethodSelect.value = targetListOrEntry.payment_method_uuid
       }
       return row
    }

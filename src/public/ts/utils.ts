@@ -40,7 +40,8 @@ export const Icons = {
    get Upload2() { return create('i', { class: 'bi bi-cloud-upload-fill' }) },
    get Download() { return create('i', { class: 'bi bi-cloud-arrow-down-fill' }) },
    get Download2() { return create('i', { class: 'bi bi-cloud-download-fill' }) },
-
+   get PieChart() { return create('i', { class: 'bi bi-pie-chart-fill' }) },
+   get BarChart() { return create('i', { class: 'bi bi-bar-chart-line-fill' }) }
 }
 
 export const Buttons = {

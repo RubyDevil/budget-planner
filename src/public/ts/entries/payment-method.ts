@@ -52,14 +52,14 @@ export class PaymentMethod extends Entry {
          const [nameInput, ownerSelect] = PaymentMethod.getFields(this.row)
          this.name = nameInput.value
          this.owner_uuid = ownerSelect.value
-         this.budget.onPaymentMethodsChanged()
+         this.budget.refreshAll()
       }
    }
 
    delete() {
       if (confirm('Are you sure you want to delete this entry?')) {
          this.budget.paymentMethods.delete(this.uuid)
-         this.budget.onPaymentMethodsChanged()
+         this.budget.refreshAll()
       }
    }
 
@@ -106,7 +106,7 @@ export class PaymentMethod extends Entry {
                   name: nameInput.value,
                   owner_uuid: ownerSelect.value
                }))
-               budget.onPaymentMethodsChanged()
+               budget.refreshAll()
                resetForm(row)
             }
          })

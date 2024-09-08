@@ -15,6 +15,8 @@ budget.paymentMethods.set(uuids[3], new PaymentMethod(budget, { uuid: uuids[3], 
 budget.refreshAll()
 
 document.getElementById('root')?.append(
+   create('h2', { class: 'fit' }, [Icons.BarChart, ' Summary']),
+   budget.summaryDisplay,
    create('div', { class: 'd-flex gap-4' }, [
       create('div', { class: 'flex-fill' }, [
          create('h2', { class: 'fit' }, [Icons.Person, ' People']),
@@ -29,5 +31,8 @@ document.getElementById('root')?.append(
    budget.salariesTable,
    create('h2', { class: 'fit' }, [Icons.Wrench, ' Bills']),
    budget.billsTable,
-   budget.saveButton
+   create('div', { class: 'd-flex gap-2 justify-content-center w-100 mt-5' }, [
+      budget.downloadButton,
+      budget.uploadButton
+   ])
 )

@@ -41,14 +41,14 @@ export class Person extends Entry {
       if (Person.validateForm(this.row)) {
          const [nameInput] = Person.getFields(this.row)
          this.name = nameInput.value
-         budget.onPeopleChanged()
+         budget.refreshAll()
       }
    }
 
    delete() {
       if (confirm('Are you sure you want to delete this entry?')) {
          budget.people.delete(this.uuid)
-         budget.onPeopleChanged()
+         budget.refreshAll()
       }
    }
 
@@ -82,7 +82,7 @@ export class Person extends Entry {
             if (this.validateForm(row)) {
                const uuid = crypto.randomUUID()
                budget.people.set(uuid, new this(budget, { uuid: uuid, name: nameInput.value }))
-               budget.onPeopleChanged()
+               budget.refreshAll()
                resetForm(row)
             }
          })
