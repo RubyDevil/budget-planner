@@ -80,7 +80,7 @@ export class Category extends Entry {
          .appendChild(create('select', { class: 'form-select' }))
       iconSelect.options.add(create('option', { value: '', selected: '', disabled: '', hidden: '' }, 'Icon'))
       for (const [name, icon] of Object.entries(Icons))
-         iconSelect.options.add(create('option', { value: icon.classList[1] }, name))
+         iconSelect.options.add(create('option', { value: icon.className }, name))
       iconSelect.addEventListener('change', this.validateForm.bind(this, row))
       const nameInput = group
          .appendChild(create('input', {

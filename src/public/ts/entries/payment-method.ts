@@ -90,7 +90,7 @@ export class PaymentMethod extends Entry {
       // Owner
       const ownerSelect = row.insertCell()
          // .appendChild(createInputGroup(Icons.Person))
-         .appendChild(create('select', { class: 'form-control' }))
+         .appendChild(create('select', { class: 'form-select' }))
       Person.generateSelectOptions(budget, ownerSelect)
       ownerSelect.addEventListener('focusin', (e) => Person.generateSelectOptions(budget, ownerSelect))
       ownerSelect.addEventListener('change', this.validateForm.bind(this, row))

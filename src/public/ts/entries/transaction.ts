@@ -1,6 +1,7 @@
 import { Budget } from "../budget"
 import { Buttons, create, createInputGroup, goToElement, Icons, resetForm, Tooltips } from "../utils"
 import { Category } from "./category"
+import { CYCLE, CYCLE_DAYS, isCycle } from "./cycle"
 import { Entry, EntryJson } from "./entry"
 import { PaymentMethod } from "./payment-method"
 
@@ -9,7 +10,7 @@ export interface TransactionJson extends EntryJson {
    name: string
    amount: number
    payment_method_uuid: string,
-   billing_cycle: [number, 'day' | 'week' | 'month' | 'year']
+   billing_cycle: [number, CYCLE]
 }
 
 export class Transaction extends Entry {
@@ -42,6 +43,11 @@ export class Transaction extends Entry {
       this.amount = data.amount
       this.payment_method_uuid = data.payment_method_uuid
       this.billing_cycle = data.billing_cycle
+   }
+
+   amountPer(targetDays: number) {
+      const originalDays = CYCLE_DAYS[this.billing_cycle[1]] * this.billing_cycle[0]
+      return this.amount * targetDays / originalDays
    }
 
    createLink(): HTMLAnchorElement {
@@ -113,7 +119,7 @@ export class Transaction extends Entry {
       // Category
       const categorySelect = row.insertCell()
          // .appendChild(createInputGroup(Icons.Bookmarks))
-         .appendChild(create('select', { class: 'form-control' }))
+         .appendChild(create('select', { class: 'form-select' }))
       Category.generateSelectOptions(budget, categorySelect)
       categorySelect.addEventListener('focusin', (e) => Category.generateSelectOptions(budget, categorySelect))
       categorySelect.addEventListener('change', this.validateForm.bind(this, row))
@@ -138,7 +144,7 @@ export class Transaction extends Entry {
       Tooltips.create(amountInput, 'bottom', 'Non-zero amount, negative for expenses and positive for income')
       // Payment Method
       const paymentMethodSelect = row.insertCell()
-         .appendChild(create('select', { class: 'form-control' }))
+         .appendChild(create('select', { class: 'form-select' }))
       PaymentMethod.generateSelectOptions(budget, paymentMethodSelect)
       paymentMethodSelect.addEventListener('focusin', (e) => PaymentMethod.generateSelectOptions(budget, paymentMethodSelect))
       paymentMethodSelect.addEventListener('change', this.validateForm.bind(this, row))
@@ -155,11 +161,14 @@ export class Transaction extends Entry {
       cycleInput.addEventListener('input', this.validateForm.bind(this, row))
       Tooltips.create(cycleInput, 'bottom', 'Number of days, weeks, months, or years. Must be greater than 0.')
       const cycleSelect = group.appendChild(create('select', { class: 'form-select' }))
-      cycleSelect.options.add(create('option', { value: '', selected: '', disabled: '', hidden: '' }, 'Cycle'))
-      cycleSelect.options.add(create('option', { value: 'day' }, 'day'))
-      cycleSelect.options.add(create('option', { value: 'week' }, 'week'))
-      cycleSelect.options.add(create('option', { value: 'month' }, 'month'))
-      cycleSelect.options.add(create('option', { value: 'year' }, 'year'))
+      cycleSelect.options.add(new Option('Cycle', '', true, true))
+      cycleSelect.options.add(new Option('Day', CYCLE.DAY))
+      cycleSelect.options.add(new Option('Week', CYCLE.WEEK))
+      cycleSelect.options.add(new Option('Month', CYCLE.MONTH))
+      cycleSelect.options.add(new Option('Year', CYCLE.YEAR))
+      cycleSelect.options[0].disabled = true
+      cycleSelect.options[0].hidden = true
+      cycleSelect.addEventListener('change', this.validateForm.bind(this, row))
       // Actions
       const actions = row.insertCell().appendChild(create('span', { class: 'd-flex gap-2' }))
       if (targetListOrEntry instanceof Transaction) {
@@ -177,7 +186,7 @@ export class Transaction extends Entry {
                   name: nameInput.value,
                   amount: parseFloat(amountInput.value),
                   payment_method_uuid: paymentMethodSelect.value,
-                  billing_cycle: [1, 'month'] // TODO Change this to be user-defined
+                  billing_cycle: [parseInt(cycleInput.value), cycleSelect.value as CYCLE]
                }))
                budget.refreshAll()
                resetForm(row)
