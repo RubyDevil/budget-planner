@@ -118,7 +118,6 @@ export class Transaction extends Entry {
       row.innerHTML = ''
       // Category
       const categorySelect = row.insertCell()
-         // .appendChild(createInputGroup(Icons.Bookmarks))
          .appendChild(create('select', { class: 'form-select' }))
       Category.generateSelectOptions(budget, categorySelect)
       categorySelect.addEventListener('focusin', (e) => Category.generateSelectOptions(budget, categorySelect))
@@ -199,6 +198,8 @@ export class Transaction extends Entry {
          nameInput.value = targetListOrEntry.name
          amountInput.value = targetListOrEntry.amount.toString()
          paymentMethodSelect.value = targetListOrEntry.payment_method_uuid
+         cycleInput.value = targetListOrEntry.billing_cycle[0].toString()
+         cycleSelect.value = targetListOrEntry.billing_cycle[1]
       }
       return row
    }
