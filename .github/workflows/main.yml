@@ -7,6 +7,23 @@ on:
   workflow_dispatch: # Allows manual triggering
 
 jobs:
+bui toy :
+runs—on: ubuntu—latest
+concurrency: ret}}
+steps ;
+— name: Checkout
+uses: actions/checkout@v2
+— name: Configure Node
+uses: actions/setup-nodeevl
+with:
+node—version: '12.18.4 •
+— name: Install
+run: I
+npn ci
+npn run build
+
+
+jobs:
   build:
     runs-on: ubuntu-latest
 
@@ -25,8 +42,7 @@ jobs:
       run: npm run build
 
     - name: Deploy
-      uses: peaceiris/actions-gh-pages@v3
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: ./build
-        publish_branch: gh-pages # Ensure you're pushing to the correct branch
+      uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: build
+          branch: gh—pages
