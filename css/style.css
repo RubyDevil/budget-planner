@@ -1,0 +1,81 @@
+* { box-sizing: border-box; }
+
+body {
+   /* font-family: 'Roboto', sans-serif; */
+   margin: 0;
+   padding: 0;
+}
+
+a {
+   text-decoration: none;
+   cursor: pointer;
+}
+
+select,
+input.is-valid,
+input.is-invalid {
+   background-image: unset !important;
+   padding: .375rem .75rem !important;
+}
+
+table.table > tbody {
+   vertical-align: middle;
+}
+
+.fit {
+   width: max-content
+}
+
+th.fit, td.fit {
+   width: 0;
+   /* max-width: 0; */
+   min-width: fit-content;
+   overflow: hidden;
+   /* text-overflow: ellipsis; */
+}
+
+.overlay {
+   position: absolute;
+   top: 0;
+   left: 0;
+   width: 100%;
+   height: 100%;
+   background-color: var(--bs-primary) !important;
+   opacity: 1;
+   pointer-events: none;
+   /* Ensures overlay doesn't block interaction */
+   animation: fadeOut 1s ease-in-out forwards;
+   /* Fades away after 1 second */
+}
+
+@keyframes fadeOut {
+   0%, 25% {
+      opacity: 0.8;
+   }
+
+   100% {
+      opacity: 0;
+   }
+}
+
+@font-face {
+   font-family: "Segoe UI Mono W10 Regular";
+   src: url("https://db.onlinewebfonts.com/t/71b00e98168f1a2da1b6c5748587e433.eot");
+   src: url("https://db.onlinewebfonts.com/t/71b00e98168f1a2da1b6c5748587e433.eot?#iefix")format("embedded-opentype"),
+      url("https://db.onlinewebfonts.com/t/71b00e98168f1a2da1b6c5748587e433.woff2")format("woff2"),
+      url("https://db.onlinewebfonts.com/t/71b00e98168f1a2da1b6c5748587e433.woff")format("woff"),
+      url("https://db.onlinewebfonts.com/t/71b00e98168f1a2da1b6c5748587e433.ttf")format("truetype"),
+      url("https://db.onlinewebfonts.com/t/71b00e98168f1a2da1b6c5748587e433.svg#Segoe UI Mono W10 Regular")format("svg");
+}
+
+.monospace {
+   font-family: "Segoe UI Mono W10 Regular", monospace !important;
+}
+
+.positive {
+   color: rgb(50, 255, 50) !important;
+}
+
+.negative {
+   color: rgb(255, 50, 50) !important;
+}
