@@ -87,11 +87,12 @@ export class Transaction extends Entry {
 
    save() {
       if (Transaction.validateForm(this.row)) {
-         const [categorySelect, nameInput, amountInput, paymentMethodSelect] = Transaction.getFields(this.row)
+         const [categorySelect, nameInput, amountInput, paymentMethodSelect, cycleInput, cycleSelect] = Transaction.getFields(this.row)
          this.category_uuid = categorySelect.value
          this.name = nameInput.value
          this.amount = parseFloat(amountInput.value)
          this.payment_method_uuid = paymentMethodSelect.value
+         this.billing_cycle = [parseInt(cycleInput.value), cycleSelect.value as CYCLE]
          this.budget.refreshAll()
       }
    }
