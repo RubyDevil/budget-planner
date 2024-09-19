@@ -273,6 +273,7 @@ export class Budget {
          const data = {
             people: [...this.people.values()].map(person => person.toJson()),
             paymentMethods: [...this.paymentMethods.values()].map(paymentMethod => paymentMethod.toJson()),
+            categories: [...this.categories.values()].map(category => category.toJson()),
             transactions: [...this.transactions.values()].map(transaction => transaction.toJson())
          }
          const blob = new Blob([JSON.stringify(data)], { type: 'application/json' })
@@ -289,13 +290,24 @@ export class Budget {
             if (file) {
                const reader = new FileReader()
                reader.onload = () => {
+                  if (!confirm('Are you sure you want to upload this file? Unsaved changes will be lost.')) return;
                   const data = JSON.parse(reader.result as string)
-                  for (const person of data.people)
-                     this.people.set(person.uuid, new Person(this, person))
-                  for (const paymentMethod of data.paymentMethods)
-                     this.paymentMethods.set(paymentMethod.uuid, new PaymentMethod(this, paymentMethod))
-                  for (const transaction of data.transactions)
-                     this.transactions.set(transaction.uuid, new Transaction(this, transaction))
+                  this.people.clear()
+                  this.paymentMethods.clear()
+                  this.categories.clear()
+                  this.transactions.clear()
+                  if (data.people && Array.isArray(data.people))
+                     for (const person of data.people)
+                        this.people.set(person.uuid, new Person(this, person))
+                  if (data.paymentMethods && Array.isArray(data.paymentMethods))
+                     for (const paymentMethod of data.paymentMethods)
+                        this.paymentMethods.set(paymentMethod.uuid, new PaymentMethod(this, paymentMethod))
+                  if (data.categories && Array.isArray(data.categories))
+                     for (const category of data.categories)
+                        this.categories.set(category.uuid, new Category(this, category))
+                  if (data.transactions && Array.isArray(data.transactions))
+                     for (const transaction of data.transactions)
+                        this.transactions.set(transaction.uuid, new Transaction(this, transaction))
                   this.refreshAll()
                }
                reader.readAsText(file)
