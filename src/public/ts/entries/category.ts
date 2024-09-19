@@ -1,6 +1,6 @@
 import { budget } from ".."
 import { Budget } from "../budget"
-import { Buttons, create, createInputGroup, Icons, resetForm, Tooltips } from "../utils"
+import { bsIcons, Buttons, create, createInputGroup, Icons, resetForm, Tooltips } from "../utils"
 import { Entry, EntryJson } from "./entry"
 
 interface CategoryJson extends EntryJson {
@@ -50,8 +50,8 @@ export class Category extends Entry {
 
    save() {
       if (Category.validateForm(this.row)) {
-         const [categorySelect, nameInput] = Category.getFields(this.row)
-         this.icon = categorySelect.value
+         const [iconSelect, nameInput] = Category.getFields(this.row)
+         this.icon = iconSelect.value
          this.name = nameInput.value
          budget.refreshAll()
       }
@@ -79,8 +79,8 @@ export class Category extends Entry {
       const iconSelect = group
          .appendChild(create('select', { class: 'form-select' }))
       iconSelect.options.add(create('option', { value: '', selected: '', disabled: '', hidden: '' }, 'Icon'))
-      for (const [name, icon] of Object.entries(Icons))
-         iconSelect.options.add(create('option', { value: icon.className }, name))
+      for (const iconClass of bsIcons)
+         iconSelect.options.add(new Option(iconClass, iconClass, false, iconClass === editTarget?.icon))
       iconSelect.addEventListener('change', this.validateForm.bind(this, row))
       const nameInput = group
          .appendChild(create('input', {
