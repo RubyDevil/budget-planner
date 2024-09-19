@@ -321,6 +321,7 @@ export class Budget {
          ]),
          create('h2', { class: 'fit mt-5' }, [Icons.Bookmarks, ' Categories']),
          this.categoriesTable,
+         create('a', { href: 'https://icons.getbootstrap.com/#icons' }, 'See the full list of icons'),
          create('h2', { class: 'fit mt-5' }, [Icons.Bidirectional, ' Transactions']),
          this.transactionsTable,
          create('div', { class: 'd-flex gap-3 mt-5' }, [
