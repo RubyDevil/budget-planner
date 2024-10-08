@@ -227,7 +227,7 @@
       this.row.style.backgroundColor = this.accentColor();
       this.row.innerHTML = "";
       this.row.append(create("td", { colspan: 2 }, [this.createIcon(), " " + this.name]));
-      this.row.insertCell().appendChild(create("div", { style: `height: 1em; background-color: ${this.color}` }));
+      this.row.insertCell().appendChild(create("div", { style: `height: 1em; border: 1px solid black; background-color: ${this.color}` }));
       const actions = this.row.insertCell().appendChild(create("span", { class: "d-flex gap-2" }));
       actions.appendChild(Buttons.Edit).addEventListener("click", () => this.edit());
       actions.appendChild(Buttons.Delete).addEventListener("click", () => this.delete());
@@ -277,7 +277,8 @@
       Tooltips.create(nameInput, "bottom", `${this.Constraints.Name.MinLength} to ${this.Constraints.Name.MaxLength} characters`);
       const colorInput = row.insertCell().appendChild(create("input", {
         class: "form-control",
-        type: "color"
+        type: "color",
+        value: "#FFFFFF"
       }));
       colorInput.addEventListener("input", this.validateForm.bind(this, row));
       Tooltips.create(colorInput, "bottom", "Hexadecimal color in the format #FFFFFF");
@@ -939,11 +940,11 @@
         create("th", { scope: "col" }, "Subtotal"),
         create("th", { scope: "col", class: "fit" }, "Cumulative")
       );
-      this.summaryIncomeChart = create("div", { class: "d-flex flex-column gap-2 my-3 flex-grow-1" });
-      this.summaryIncomeChartLegend = this.summaryIncomeChart.appendChild(create("div", { class: "d-flex justify-content-around align-items-center w-100" }));
+      this.summaryIncomeChart = create("div", { class: "d-flex flex-column gap-2 my-3 flex-grow-1 justify-content-end" });
+      this.summaryIncomeChartLegend = this.summaryIncomeChart.appendChild(create("div", { class: "d-flex justify-content-around align-items-center w-100 flex-wrap gap-1" }));
       this.summaryIncomeChartProgressBar = this.summaryIncomeChart.appendChild(create("div", { class: "progress-stacked", style: "height: 2em" }));
-      this.summaryExpenseChart = create("div", { class: "d-flex flex-column gap-2 my-3 flex-grow-1" });
-      this.summaryExpenseChartLegend = this.summaryExpenseChart.appendChild(create("div", { class: "d-flex justify-content-around align-items-center w-100" }));
+      this.summaryExpenseChart = create("div", { class: "d-flex flex-column gap-2 my-3 flex-grow-1 justify-content-end" });
+      this.summaryExpenseChartLegend = this.summaryExpenseChart.appendChild(create("div", { class: "d-flex justify-content-around align-items-center w-100 flex-wrap gap-1" }));
       this.summaryExpenseChartProgressBar = this.summaryExpenseChart.appendChild(create("div", { class: "progress-stacked", style: "height: 2em" }));
       this.refreshSummary = () => {
         const cycleDays = CYCLE_DAYS[this.summaryCycleSelect.value] * +this.summaryCycleInput.value;
@@ -985,13 +986,21 @@
             if (subtotal === 0) continue;
             const percent = Math.abs(subtotal) / (Math.abs(totalIncome) || 1) * 100;
             this.summaryIncomeChartLegend.append(create("span", {}, [create("span", { class: "text-success" }, [Icons.PieChart]), ` ${category.name} (${formatMoney(subtotal)})`]));
-            this.summaryIncomeChartProgressBar.append(create("div", { class: "progress-bar bg-success", style: `width: ${percent}%` }, category.name));
+            this.summaryIncomeChartProgressBar.append(create(
+              "div",
+              { class: "progress-bar bg-success", style: `width: ${percent}%` }
+              /*, category.name*/
+            ));
           }
         }
         if (unknownSubtotal !== 0) {
           const percent = Math.abs(unknownSubtotal) / (Math.abs(totalIncome) || 1) * 100;
           this.summaryIncomeChartLegend.append(create("span", {}, [create("span", {}, [Icons.PieChart]), ` Unknown (${formatMoney(unknownSubtotal)})`]));
-          this.summaryIncomeChartProgressBar.append(create("div", { class: "progress-bar bg-dark", style: `width: ${percent}%` }, "Unknown"));
+          this.summaryIncomeChartProgressBar.append(create(
+            "div",
+            { class: "progress-bar bg-dark", style: `width: ${percent}%` }
+            /*, 'Unknown'*/
+          ));
         }
         var unknownSubtotal = 0;
         for (const [categoryUUID, subtotal] of expenseSubtotals) {
@@ -1001,13 +1010,21 @@
             if (subtotal === 0) continue;
             const percent = Math.abs(subtotal) / (Math.abs(totalExpense) || 1) * 100;
             this.summaryExpenseChartLegend.append(create("span", {}, [create("span", { class: "text-danger" }, [Icons.PieChart]), ` ${category.name} (${formatMoney(subtotal)})`]));
-            this.summaryExpenseChartProgressBar.append(create("div", { class: "progress-bar bg-danger", style: `width: ${percent}%` }, category.name));
+            this.summaryExpenseChartProgressBar.append(create(
+              "div",
+              { class: "progress-bar bg-danger", style: `width: ${percent}%` }
+              /*, category.name*/
+            ));
           }
         }
         if (unknownSubtotal !== 0) {
           const percent = Math.abs(unknownSubtotal) / (Math.abs(totalExpense) || 1) * 100;
           this.summaryExpenseChartLegend.append(create("span", {}, [create("span", {}, [Icons.PieChart]), ` Unknown (${formatMoney(unknownSubtotal)})`]));
-          this.summaryExpenseChartProgressBar.append(create("div", { class: "progress-bar bg-dark", style: `width: ${percent}%` }, "Unknown"));
+          this.summaryExpenseChartProgressBar.append(create(
+            "div",
+            { class: "progress-bar bg-dark", style: `width: ${percent}%` }
+            /*, 'Unknown'*/
+          ));
         }
       };
       this.refreshAll = () => {

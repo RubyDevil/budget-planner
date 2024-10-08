@@ -46,7 +46,7 @@ export class Category extends Entry {
       // Name and Icon
       this.row.append(create('td', { colspan: 2 }, [this.createIcon(), ' ' + this.name]))
       // Color
-      this.row.insertCell().appendChild(create('div', { style: `height: 1em; background-color: ${this.color}` }))
+      this.row.insertCell().appendChild(create('div', { style: `height: 1em; border: 1px solid black; background-color: ${this.color}` }))
       // Actions
       const actions = this.row.insertCell().appendChild(create('span', { class: 'd-flex gap-2' }))
       actions.appendChild(Buttons.Edit).addEventListener('click', () => this.edit())
@@ -106,7 +106,8 @@ export class Category extends Entry {
       // Color
       const colorInput = row.insertCell().appendChild(create('input', {
          class: 'form-control',
-         type: 'color'
+         type: 'color',
+         value: '#FFFFFF'
       }))
       colorInput.addEventListener('input', this.validateForm.bind(this, row))
       Tooltips.create(colorInput, 'bottom', 'Hexadecimal color in the format #FFFFFF')
