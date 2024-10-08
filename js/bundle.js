@@ -212,7 +212,7 @@
       super(budget2, data);
       this.icon = data.icon;
       this.name = data.name;
-      this.color = data.color ?? "#000000";
+      this.color = data.color ?? "#FFFFFF";
     }
     createIcon() {
       return create("i", { class: this.icon });
