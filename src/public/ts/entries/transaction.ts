@@ -1,7 +1,7 @@
 import { Budget } from "../budget"
-import { Buttons, create, createInputGroup, goToElement, Icons, resetForm, Tooltips } from "../utils"
+import { Buttons, create, goToElement, Icons, resetForm, Tooltips } from "../utils"
 import { Category } from "./category"
-import { CYCLE, CYCLE_DAYS, isCycle } from "./cycle"
+import { CYCLE, CYCLE_DAYS } from "./cycle"
 import { Entry, EntryJson } from "./entry"
 import { PaymentMethod } from "./payment-method"
 
@@ -55,6 +55,7 @@ export class Transaction extends Entry {
    }
 
    build() {
+      this.row.style.backgroundColor = this.category?.accentColor() ?? '#ffffff'
       this.row.innerHTML = ''
       // Name and Category
       this.row.insertCell().appendChild(this.category?.createLink() ?? Entry.unknownLink())
@@ -78,6 +79,7 @@ export class Transaction extends Entry {
       const actions = this.row.insertCell().appendChild(create('span', { class: 'd-flex gap-2' }))
       actions.appendChild(Buttons.Edit).addEventListener('click', () => this.edit())
       actions.appendChild(Buttons.Delete).addEventListener('click', () => this.delete())
+      this.row.querySelectorAll('td')?.forEach(td => td.style.background = 'inherit')
       return this.row
    }
 
@@ -195,6 +197,7 @@ export class Transaction extends Entry {
       }
       // Data
       if (targetListOrEntry instanceof Transaction) {
+         row.style.backgroundColor = targetListOrEntry.category?.accentColor() ?? '#ffffff'
          categorySelect.value = targetListOrEntry.category_uuid
          nameInput.value = targetListOrEntry.name
          amountInput.value = targetListOrEntry.amount.toString()
@@ -202,6 +205,7 @@ export class Transaction extends Entry {
          cycleInput.value = targetListOrEntry.billing_cycle[0].toString()
          cycleSelect.value = targetListOrEntry.billing_cycle[1]
       }
+      row.querySelectorAll('td')?.forEach(td => td.style.background = 'none')
       return row
    }
 
