@@ -940,10 +940,10 @@
         create("th", { scope: "col" }, "Subtotal"),
         create("th", { scope: "col", class: "fit" }, "Cumulative")
       );
-      this.summaryIncomeChart = create("div", { class: "d-flex flex-column gap-2 my-3 flex-grow-1 justify-content-end" });
+      this.summaryIncomeChart = create("div", { class: "d-flex flex-column gap-2 my-3 w-50 justify-content-end" });
       this.summaryIncomeChartLegend = this.summaryIncomeChart.appendChild(create("div", { class: "d-flex justify-content-around align-items-center w-100 flex-wrap gap-1" }));
       this.summaryIncomeChartProgressBar = this.summaryIncomeChart.appendChild(create("div", { class: "progress-stacked", style: "height: 2em" }));
-      this.summaryExpenseChart = create("div", { class: "d-flex flex-column gap-2 my-3 flex-grow-1 justify-content-end" });
+      this.summaryExpenseChart = create("div", { class: "d-flex flex-column gap-2 my-3 w-50 justify-content-end" });
       this.summaryExpenseChartLegend = this.summaryExpenseChart.appendChild(create("div", { class: "d-flex justify-content-around align-items-center w-100 flex-wrap gap-1" }));
       this.summaryExpenseChartProgressBar = this.summaryExpenseChart.appendChild(create("div", { class: "progress-stacked", style: "height: 2em" }));
       this.refreshSummary = () => {
