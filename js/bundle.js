@@ -212,7 +212,7 @@
       super(budget2, data);
       this.icon = data.icon;
       this.name = data.name;
-      this.color = data.color ?? "#FFFFFF";
+      this.color = data.color ?? "#000000";
     }
     createIcon() {
       return create("i", { class: this.icon });
@@ -957,7 +957,7 @@
         const totalExpense = [...this.transactions.values()].filter((transaction) => transaction.amountPer(cycleDays) < 0).reduce((total, transaction) => total + transaction.amountPer(cycleDays), 0);
         const cumulativeSubtotals = [...this.calculateSubtotals(cycleDays).entries()].sort((a, b) => b[1] - a[1]);
         const incomeSubtotals = [...this.calculateSubtotals(cycleDays, (transaction) => transaction.amountPer(cycleDays) <= 0).entries()].sort((a, b) => b[1] - a[1]);
-        const expenseSubtotals = [...this.calculateSubtotals(cycleDays, (transaction) => transaction.amountPer(cycleDays) >= 0).entries()].sort((a, b) => b[1] - a[1]);
+        const expenseSubtotals = [...this.calculateSubtotals(cycleDays, (transaction) => transaction.amountPer(cycleDays) >= 0).entries()].sort((a, b) => a[1] - b[1]);
         let cumulative = 0;
         var unknownSubtotal = 0;
         for (const [categoryUUID, subtotal] of cumulativeSubtotals) {
@@ -985,10 +985,10 @@
           else {
             if (subtotal === 0) continue;
             const percent = Math.abs(subtotal) / (Math.abs(totalIncome) || 1) * 100;
-            this.summaryIncomeChartLegend.append(create("span", {}, [create("span", { class: "text-success" }, [Icons.PieChart]), ` ${category.name} (${formatMoney(subtotal)})`]));
+            this.summaryIncomeChartLegend.append(create("span", {}, [create("span", { style: `color: ${category.color} !important` }, [Icons.PieChart]), ` ${category.name} (${formatMoney(subtotal)})`]));
             this.summaryIncomeChartProgressBar.append(create(
               "div",
-              { class: "progress-bar bg-success", style: `width: ${percent}%` }
+              { class: "progress-bar bg-success", style: `width: ${percent}%; background-color: ${category.color} !important` }
               /*, category.name*/
             ));
           }
@@ -1009,10 +1009,10 @@
           else {
             if (subtotal === 0) continue;
             const percent = Math.abs(subtotal) / (Math.abs(totalExpense) || 1) * 100;
-            this.summaryExpenseChartLegend.append(create("span", {}, [create("span", { class: "text-danger" }, [Icons.PieChart]), ` ${category.name} (${formatMoney(subtotal)})`]));
+            this.summaryExpenseChartLegend.append(create("span", {}, [create("span", { style: `color: ${category.color} !important` }, [Icons.PieChart]), ` ${category.name} (${formatMoney(subtotal)})`]));
             this.summaryExpenseChartProgressBar.append(create(
               "div",
-              { class: "progress-bar bg-danger", style: `width: ${percent}%` }
+              { class: "progress-bar bg-danger", style: `width: ${percent}%; background-color: ${category.color} !important` }
               /*, category.name*/
             ));
           }
