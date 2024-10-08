@@ -28,6 +28,10 @@ export function formatMoney(money: number, positiveSign?: boolean) {
    return (positiveSign && money >= 0 ? '+' : '') + money.toLocaleString('en-US', { style: 'currency', currency: 'USD' })
 }
 
+export function isHexColor(color: string) {
+   return /^#[0-9A-F]{6}$/i.test(color)
+}
+
 export function blendColors(colorA: string, colorB: string, amount: number) {
    const [rA, gA, bA] = colorA.match(/\w\w/g)?.map((c) => parseInt(c, 16)) ?? [0, 0, 0];
    const [rB, gB, bB] = colorB.match(/\w\w/g)?.map((c) => parseInt(c, 16)) ?? [0, 0, 0];
