@@ -32,7 +32,7 @@ export function isHexColor(color: string) {
    return /^#[0-9A-F]{6}$/i.test(color)
 }
 
-export function blendColors(colorA: string, colorB: string, amount: number) {
+export function blendColors(colorA: string = "#000000", colorB: string = "#000000", amount: number = 0.5) {
    const [rA, gA, bA] = colorA.match(/\w\w/g)?.map((c) => parseInt(c, 16)) ?? [0, 0, 0];
    const [rB, gB, bB] = colorB.match(/\w\w/g)?.map((c) => parseInt(c, 16)) ?? [0, 0, 0];
    const r = Math.round(rA + (rB - rA) * amount).toString(16).padStart(2, '0');
