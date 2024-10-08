@@ -234,13 +234,13 @@ export class Budget {
                if (subtotal === 0) continue
                const percent = Math.abs(subtotal) / (Math.abs(totalIncome) || 1) * 100
                this.summaryIncomeChartLegend.append(create('span', {}, [create('span', { class: 'text-success' }, [Icons.PieChart]), ` ${category.name} (${formatMoney(subtotal)})`]))
-               this.summaryIncomeChartProgressBar.append(create('div', { class: 'progress-bar bg-success', style: `width: ${percent}%` }, category.name))
+               this.summaryIncomeChartProgressBar.append(create('div', { class: 'progress-bar bg-success', style: `width: ${percent}%` }/*, category.name*/))
             }
          }
          if (unknownSubtotal !== 0) {
             const percent = Math.abs(unknownSubtotal) / (Math.abs(totalIncome) || 1) * 100
             this.summaryIncomeChartLegend.append(create('span', {}, [create('span', {}, [Icons.PieChart]), ` Unknown (${formatMoney(unknownSubtotal)})`]))
-            this.summaryIncomeChartProgressBar.append(create('div', { class: 'progress-bar bg-dark', style: `width: ${percent}%` }, 'Unknown'))
+            this.summaryIncomeChartProgressBar.append(create('div', { class: 'progress-bar bg-dark', style: `width: ${percent}%` }/*, 'Unknown'*/))
          }
          // Expense
          var unknownSubtotal = 0
@@ -251,13 +251,13 @@ export class Budget {
                if (subtotal === 0) continue
                const percent = Math.abs(subtotal) / (Math.abs(totalExpense) || 1) * 100
                this.summaryExpenseChartLegend.append(create('span', {}, [create('span', { class: 'text-danger' }, [Icons.PieChart]), ` ${category.name} (${formatMoney(subtotal)})`]))
-               this.summaryExpenseChartProgressBar.append(create('div', { class: 'progress-bar bg-danger', style: `width: ${percent}%` }, category.name))
+               this.summaryExpenseChartProgressBar.append(create('div', { class: 'progress-bar bg-danger', style: `width: ${percent}%` }/*, category.name*/))
             }
          }
          if (unknownSubtotal !== 0) {
             const percent = Math.abs(unknownSubtotal) / (Math.abs(totalExpense) || 1) * 100
             this.summaryExpenseChartLegend.append(create('span', {}, [create('span', {}, [Icons.PieChart]), ` Unknown (${formatMoney(unknownSubtotal)})`]))
-            this.summaryExpenseChartProgressBar.append(create('div', { class: 'progress-bar bg-dark', style: `width: ${percent}%` }, 'Unknown'))
+            this.summaryExpenseChartProgressBar.append(create('div', { class: 'progress-bar bg-dark', style: `width: ${percent}%` }/*, 'Unknown'*/))
          }
       }
       // Refresh All
