@@ -97,6 +97,7 @@ export class Budget {
       this.categoriesTBody = this.categoriesTable.createTBody()
       this.categoriesTHead.appendChild(create('tr')).append(
          create('th', { scope: 'col', colspan: 2 }, 'Name'),
+         create('th', { scope: 'col' }, 'Color'),
          create('th', { scope: 'col', class: 'fit' }, 'Actions')
       )
       this.categoriesForm = create('tr')
@@ -128,7 +129,7 @@ export class Budget {
             const transactions = [...this.transactions.values()].filter(transaction => transaction.category_uuid === category.uuid)
             if (transactions.length) {
                this.transactionsTBody.append(create('tr', {}, [
-                  create('th', { colspan: 6, class: 'text-center bg-body-tertiary' }, category.name)
+                  create('th', { colspan: 6, class: 'text-center', style: `background-color: ${category.accentColor(0.1)}` }, category.name)
                ]))
                for (const transaction of transactions)
                   this.transactionsTBody.append(transaction.build())
@@ -333,7 +334,7 @@ export class Budget {
          ]),
          create('h2', { class: 'fit mt-5' }, [Icons.Bookmarks, ' Categories']),
          this.categoriesTable,
-         create('a', { href: 'https://icons.getbootstrap.com/#icons' }, 'See the full list of icons'),
+         create('a', { href: 'https://icons.getbootstrap.com/#icons', target: '_blank' }, 'See the full list of icons'),
          create('h2', { class: 'fit mt-5' }, [Icons.Bidirectional, ' Transactions']),
          this.transactionsTable,
          create('div', { class: 'd-flex gap-3 mt-5' }, [

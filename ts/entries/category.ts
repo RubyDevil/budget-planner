@@ -1,11 +1,12 @@
 import { budget } from ".."
 import { Budget } from "../budget"
-import { bsIcons, Buttons, create, createInputGroup, Icons, resetForm, Tooltips } from "../utils"
+import { blendColors, bsIcons, Buttons, create, createInputGroup, Icons, isHexColor, resetForm, Tooltips } from "../utils"
 import { Entry, EntryJson } from "./entry"
 
 interface CategoryJson extends EntryJson {
    icon: string
    name: string
+   color: string
 }
 
 export class Category extends Entry {
@@ -18,11 +19,13 @@ export class Category extends Entry {
 
    icon: string
    name: string
+   color: string
 
    constructor(budget: Budget, data: CategoryJson) {
       super(budget, data)
       this.icon = data.icon
       this.name = data.name
+      this.color = data.color ?? '#000000'
    }
 
    createIcon(): HTMLElement {
@@ -33,14 +36,22 @@ export class Category extends Entry {
       return create('a', { class: 'text-primary' }, [this.createIcon(), ' ' + this.name])
    }
 
+   accentColor(amount: number = 0.05): string {
+      return blendColors("#ffffff", this.color, amount)
+   }
+
    build() {
+      this.row.style.backgroundColor = this.accentColor()
       this.row.innerHTML = ''
       // Name and Icon
       this.row.append(create('td', { colspan: 2 }, [this.createIcon(), ' ' + this.name]))
+      // Color
+      this.row.insertCell().appendChild(create('div', { style: `height: 1em; background-color: ${this.color}` }))
       // Actions
       const actions = this.row.insertCell().appendChild(create('span', { class: 'd-flex gap-2' }))
       actions.appendChild(Buttons.Edit).addEventListener('click', () => this.edit())
       actions.appendChild(Buttons.Delete).addEventListener('click', () => this.delete())
+      this.row.querySelectorAll('td')?.forEach(td => td.style.background = 'inherit')
       return this.row
    }
 
@@ -50,9 +61,10 @@ export class Category extends Entry {
 
    save() {
       if (Category.validateForm(this.row)) {
-         const [iconSelect, nameInput] = Category.getFields(this.row)
+         const [iconSelect, nameInput, colorInput] = Category.getFields(this.row)
          this.icon = iconSelect.value
          this.name = nameInput.value
+         this.color = colorInput.value
          budget.refreshAll()
       }
    }
@@ -68,7 +80,8 @@ export class Category extends Entry {
       return {
          uuid: this.uuid,
          icon: this.icon,
-         name: this.name
+         name: this.name,
+         color: this.color
       }
    }
 
@@ -90,6 +103,13 @@ export class Category extends Entry {
          }))
       nameInput.addEventListener('input', this.validateForm.bind(this, row))
       Tooltips.create(nameInput, 'bottom', `${this.Constraints.Name.MinLength} to ${this.Constraints.Name.MaxLength} characters`)
+      // Color
+      const colorInput = row.insertCell().appendChild(create('input', {
+         class: 'form-control',
+         type: 'color'
+      }))
+      colorInput.addEventListener('input', this.validateForm.bind(this, row))
+      Tooltips.create(colorInput, 'bottom', 'Hexadecimal color in the format #FFFFFF')
       // Actions
       const actions = row.insertCell().appendChild(create('span', { class: 'd-flex gap-2' }))
       if (editTarget) {
@@ -103,7 +123,8 @@ export class Category extends Entry {
                budget.categories.set(uuid, new this(budget, {
                   uuid: uuid,
                   icon: iconSelect.value,
-                  name: nameInput.value
+                  name: nameInput.value,
+                  color: colorInput.value
                }))
                budget.refreshAll()
                resetForm(row)
@@ -114,22 +135,26 @@ export class Category extends Entry {
       if (editTarget) {
          iconSelect.value = editTarget.icon
          nameInput.value = editTarget.name
+         colorInput.value = editTarget.color
       }
+      row.querySelectorAll('td')?.forEach(td => td.style.background = 'inherit')
       return row
    }
 
    static getFields(form: HTMLTableRowElement) {
       return [
          form.cells[0].getElementsByTagName('select')[0], // iconSelect
-         form.cells[0].getElementsByTagName('input')[0] // nameInput
+         form.cells[0].getElementsByTagName('input')[0], // nameInput
+         form.cells[1].getElementsByTagName('input')[0] // colorInput
       ]
    }
 
    static validateForm(form: HTMLTableRowElement) {
-      const [iconSelect, nameInput] = this.getFields(form)
+      const [iconSelect, nameInput, colorInput] = this.getFields(form)
       const results: [HTMLElement, boolean][] = []
       results.push([iconSelect, iconSelect.value !== ''])
       results.push([nameInput, nameInput.value.trim().length >= Category.Constraints.Name.MinLength && nameInput.value.trim().length <= Category.Constraints.Name.MaxLength])
+      results.push([colorInput, isHexColor(colorInput.value)])
       for (const [element, valid] of results) {
          element.classList.toggle('is-invalid', !valid)
          element.classList.toggle('is-valid', valid)

@@ -21,6 +21,17 @@
   function formatMoney(money, positiveSign) {
     return (positiveSign && money >= 0 ? "+" : "") + money.toLocaleString("en-US", { style: "currency", currency: "USD" });
   }
+  function isHexColor(color) {
+    return /^#[0-9A-F]{6}$/i.test(color);
+  }
+  function blendColors(colorA = "#000000", colorB = "#000000", amount = 0.5) {
+    const [rA, gA, bA] = colorA.match(/\w\w/g)?.map((c) => parseInt(c, 16)) ?? [0, 0, 0];
+    const [rB, gB, bB] = colorB.match(/\w\w/g)?.map((c) => parseInt(c, 16)) ?? [0, 0, 0];
+    const r = Math.round(rA + (rB - rA) * amount).toString(16).padStart(2, "0");
+    const g = Math.round(gA + (gB - gA) * amount).toString(16).padStart(2, "0");
+    const b = Math.round(bA + (bB - bA) * amount).toString(16).padStart(2, "0");
+    return "#" + r + g + b;
+  }
   var Tooltips = class {
     static list = [];
     static create(element, placement = "top", title) {
@@ -196,10 +207,12 @@
     };
     icon;
     name;
+    color;
     constructor(budget2, data) {
       super(budget2, data);
       this.icon = data.icon;
       this.name = data.name;
+      this.color = data.color ?? "#000000";
     }
     createIcon() {
       return create("i", { class: this.icon });
@@ -207,12 +220,18 @@
     createLink() {
       return create("a", { class: "text-primary" }, [this.createIcon(), " " + this.name]);
     }
+    accentColor(amount = 0.05) {
+      return blendColors("#ffffff", this.color, amount);
+    }
     build() {
+      this.row.style.backgroundColor = this.accentColor();
       this.row.innerHTML = "";
       this.row.append(create("td", { colspan: 2 }, [this.createIcon(), " " + this.name]));
+      this.row.insertCell().appendChild(create("div", { style: `height: 1em; background-color: ${this.color}` }));
       const actions = this.row.insertCell().appendChild(create("span", { class: "d-flex gap-2" }));
       actions.appendChild(Buttons.Edit).addEventListener("click", () => this.edit());
       actions.appendChild(Buttons.Delete).addEventListener("click", () => this.delete());
+      this.row.querySelectorAll("td")?.forEach((td) => td.style.background = "inherit");
       return this.row;
     }
     edit() {
@@ -220,9 +239,10 @@
     }
     save() {
       if (_Category.validateForm(this.row)) {
-        const [iconSelect, nameInput] = _Category.getFields(this.row);
+        const [iconSelect, nameInput, colorInput] = _Category.getFields(this.row);
         this.icon = iconSelect.value;
         this.name = nameInput.value;
+        this.color = colorInput.value;
         budget.refreshAll();
       }
     }
@@ -236,7 +256,8 @@
       return {
         uuid: this.uuid,
         icon: this.icon,
-        name: this.name
+        name: this.name,
+        color: this.color
       };
     }
     static buildForm(row, budget2, editTarget) {
@@ -254,6 +275,12 @@
       }));
       nameInput.addEventListener("input", this.validateForm.bind(this, row));
       Tooltips.create(nameInput, "bottom", `${this.Constraints.Name.MinLength} to ${this.Constraints.Name.MaxLength} characters`);
+      const colorInput = row.insertCell().appendChild(create("input", {
+        class: "form-control",
+        type: "color"
+      }));
+      colorInput.addEventListener("input", this.validateForm.bind(this, row));
+      Tooltips.create(colorInput, "bottom", "Hexadecimal color in the format #FFFFFF");
       const actions = row.insertCell().appendChild(create("span", { class: "d-flex gap-2" }));
       if (editTarget) {
         actions.appendChild(Buttons.Save).addEventListener("click", () => editTarget.save());
@@ -266,7 +293,8 @@
             budget2.categories.set(uuid, new this(budget2, {
               uuid,
               icon: iconSelect.value,
-              name: nameInput.value
+              name: nameInput.value,
+              color: colorInput.value
             }));
             budget2.refreshAll();
             resetForm(row);
@@ -276,22 +304,27 @@
       if (editTarget) {
         iconSelect.value = editTarget.icon;
         nameInput.value = editTarget.name;
+        colorInput.value = editTarget.color;
       }
+      row.querySelectorAll("td")?.forEach((td) => td.style.background = "inherit");
       return row;
     }
     static getFields(form) {
       return [
         form.cells[0].getElementsByTagName("select")[0],
         // iconSelect
-        form.cells[0].getElementsByTagName("input")[0]
+        form.cells[0].getElementsByTagName("input")[0],
         // nameInput
+        form.cells[1].getElementsByTagName("input")[0]
+        // colorInput
       ];
     }
     static validateForm(form) {
-      const [iconSelect, nameInput] = this.getFields(form);
+      const [iconSelect, nameInput, colorInput] = this.getFields(form);
       const results = [];
       results.push([iconSelect, iconSelect.value !== ""]);
       results.push([nameInput, nameInput.value.trim().length >= _Category.Constraints.Name.MinLength && nameInput.value.trim().length <= _Category.Constraints.Name.MaxLength]);
+      results.push([colorInput, isHexColor(colorInput.value)]);
       for (const [element, valid] of results) {
         element.classList.toggle("is-invalid", !valid);
         element.classList.toggle("is-valid", valid);
@@ -576,6 +609,7 @@
       return create("a", { class: "text-primary" }, [Icons.Bidirectional, " " + this.name]);
     }
     build() {
+      this.row.style.backgroundColor = this.category?.accentColor() ?? "#ffffff";
       this.row.innerHTML = "";
       this.row.insertCell().appendChild(this.category?.createLink() ?? Entry.unknownLink()).addEventListener("click", (e) => goToElement(this.category?.row));
       this.row.insertCell().textContent = this.name;
@@ -592,6 +626,7 @@
       const actions = this.row.insertCell().appendChild(create("span", { class: "d-flex gap-2" }));
       actions.appendChild(Buttons.Edit).addEventListener("click", () => this.edit());
       actions.appendChild(Buttons.Delete).addEventListener("click", () => this.delete());
+      this.row.querySelectorAll("td")?.forEach((td) => td.style.background = "inherit");
       return this.row;
     }
     edit() {
@@ -691,6 +726,7 @@
         });
       }
       if (targetListOrEntry instanceof _Transaction) {
+        row.style.backgroundColor = targetListOrEntry.category?.accentColor() ?? "#ffffff";
         categorySelect.value = targetListOrEntry.category_uuid;
         nameInput.value = targetListOrEntry.name;
         amountInput.value = targetListOrEntry.amount.toString();
@@ -698,6 +734,7 @@
         cycleInput.value = targetListOrEntry.billing_cycle[0].toString();
         cycleSelect.value = targetListOrEntry.billing_cycle[1];
       }
+      row.querySelectorAll("td")?.forEach((td) => td.style.background = "none");
       return row;
     }
     static getFields(form) {
@@ -821,6 +858,7 @@
       this.categoriesTBody = this.categoriesTable.createTBody();
       this.categoriesTHead.appendChild(create("tr")).append(
         create("th", { scope: "col", colspan: 2 }, "Name"),
+        create("th", { scope: "col" }, "Color"),
         create("th", { scope: "col", class: "fit" }, "Actions")
       );
       this.categoriesForm = create("tr");
@@ -851,7 +889,7 @@
           const transactions = [...this.transactions.values()].filter((transaction) => transaction.category_uuid === category.uuid);
           if (transactions.length) {
             this.transactionsTBody.append(create("tr", {}, [
-              create("th", { colspan: 6, class: "text-center bg-body-tertiary" }, category.name)
+              create("th", { colspan: 6, class: "text-center", style: `background-color: ${category.accentColor(0.1)}` }, category.name)
             ]));
             for (const transaction of transactions)
               this.transactionsTBody.append(transaction.build());
@@ -1042,7 +1080,7 @@
         ]),
         create("h2", { class: "fit mt-5" }, [Icons.Bookmarks, " Categories"]),
         this.categoriesTable,
-        create("a", { href: "https://icons.getbootstrap.com/#icons" }, "See the full list of icons"),
+        create("a", { href: "https://icons.getbootstrap.com/#icons", target: "_blank" }, "See the full list of icons"),
         create("h2", { class: "fit mt-5" }, [Icons.Bidirectional, " Transactions"]),
         this.transactionsTable,
         create("div", { class: "d-flex gap-3 mt-5" }, [
