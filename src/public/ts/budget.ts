@@ -202,7 +202,7 @@ export class Budget {
             .reduce((total, transaction) => total + transaction.amountPer(cycleDays), 0)
          const cumulativeSubtotals = [...this.calculateSubtotals(cycleDays).entries()].sort((a, b) => b[1] - a[1])
          const incomeSubtotals = [...this.calculateSubtotals(cycleDays, transaction => transaction.amountPer(cycleDays) <= 0).entries()].sort((a, b) => b[1] - a[1])
-         const expenseSubtotals = [...this.calculateSubtotals(cycleDays, transaction => transaction.amountPer(cycleDays) >= 0).entries()].sort((a, b) => b[1] - a[1])
+         const expenseSubtotals = [...this.calculateSubtotals(cycleDays, transaction => transaction.amountPer(cycleDays) >= 0).entries()].sort((a, b) => a[1] - b[1])
          // Cumulative Table
          let cumulative = 0
          var unknownSubtotal = 0
@@ -233,8 +233,8 @@ export class Budget {
             else {
                if (subtotal === 0) continue
                const percent = Math.abs(subtotal) / (Math.abs(totalIncome) || 1) * 100
-               this.summaryIncomeChartLegend.append(create('span', {}, [create('span', { class: 'text-success' }, [Icons.PieChart]), ` ${category.name} (${formatMoney(subtotal)})`]))
-               this.summaryIncomeChartProgressBar.append(create('div', { class: 'progress-bar bg-success', style: `width: ${percent}%` }/*, category.name*/))
+               this.summaryIncomeChartLegend.append(create('span', {}, [create('span', { style: `color: ${category.color} !important` }, [Icons.PieChart]), ` ${category.name} (${formatMoney(subtotal)})`]))
+               this.summaryIncomeChartProgressBar.append(create('div', { class: 'progress-bar bg-success', style: `width: ${percent}%; background-color: ${category.color} !important` }/*, category.name*/))
             }
          }
          if (unknownSubtotal !== 0) {
@@ -250,8 +250,8 @@ export class Budget {
             else {
                if (subtotal === 0) continue
                const percent = Math.abs(subtotal) / (Math.abs(totalExpense) || 1) * 100
-               this.summaryExpenseChartLegend.append(create('span', {}, [create('span', { class: 'text-danger' }, [Icons.PieChart]), ` ${category.name} (${formatMoney(subtotal)})`]))
-               this.summaryExpenseChartProgressBar.append(create('div', { class: 'progress-bar bg-danger', style: `width: ${percent}%` }/*, category.name*/))
+               this.summaryExpenseChartLegend.append(create('span', {}, [create('span', { style: `color: ${category.color} !important` }, [Icons.PieChart]), ` ${category.name} (${formatMoney(subtotal)})`]))
+               this.summaryExpenseChartProgressBar.append(create('div', { class: 'progress-bar bg-danger', style: `width: ${percent}%; background-color: ${category.color} !important` }/*, category.name*/))
             }
          }
          if (unknownSubtotal !== 0) {
