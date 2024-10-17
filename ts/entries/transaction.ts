@@ -53,7 +53,7 @@ export class Transaction extends Entry {
    amountFor(targetDays: number, targetPerson?: Person) {
       const originalDays = CYCLE_DAYS[this.billing_cycle[1]] * this.billing_cycle[0]
       const total = this.amount * targetDays / originalDays
-      const percentage = targetPerson ? this.payers.get(targetPerson.uuid) ?? 0 : 1
+      const percentage = targetPerson ? this.payers.get(targetPerson.uuid) ?? 0 : 100
       return Math.ceil(total * percentage) / 100
    }
 
