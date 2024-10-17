@@ -87,6 +87,10 @@ export class Transaction extends Entry {
       actions.appendChild(Buttons.Edit).addEventListener('click', () => this.edit())
       actions.appendChild(Buttons.Delete).addEventListener('click', () => this.delete())
       this.row.querySelectorAll('td')?.forEach(td => td.style.background = 'inherit')
+      // Ergonomy and Responsiveness
+      this.row.cells[0].classList.add('d-none', 'd-lg-table-cell')
+      this.row.cells[3].classList.add('d-none', 'd-lg-table-cell')
+      this.row.cells[4].classList.add('d-none', 'd-lg-table-cell')
       return this.row
    }
 
@@ -126,6 +130,37 @@ export class Transaction extends Entry {
       cycleSelect.options.add(new Option('Month', CYCLE.MONTH, false, this.billing_cycle[1] === CYCLE.MONTH))
       cycleSelect.options.add(new Option('Year', CYCLE.YEAR, false, this.billing_cycle[1] === CYCLE.YEAR))
 
+      const payerList = Modal.body.appendChild(create('ul', { class: 'list-group' }))
+      for (const [uuid, amount] of this.payers) {
+         const person = this.budget.people.get(uuid)
+         if (!person) throw new Error('Person not found')
+         payerList.appendChild(create('li', { class: 'list-group-item d-flex justify-content-between align-items-center' }, [
+            person.name,
+            create('input', { type: 'number', class: 'form-control', 'data-person-uuid': person.uuid, value: amount * 100 })
+         ]))
+      }
+
+      // const payerSelect = create('select', { class: 'form-select' })
+      // Person.generateSelectOptions(this.budget, payerSelect)
+      // const validatePayerSelect = () => {
+      //    const isInvalid = payerSelect.value === '' ||
+      //       [...payerList.querySelectorAll('input[type="number"]').values()]
+      //          .some(input => input.getAttribute('data-person-uuid') === payerSelect.value)
+      //    payerSelect.classList.toggle('is-invalid', isInvalid)
+      //    if (isInvalid) payerSelect.focus()
+      //    return !isInvalid
+      // }
+      // payerSelect.addEventListener('change', () => validatePayerSelect())
+      // const payerAddButton = create('button', { class: 'btn btn-primary' }, [Icons.Plus])
+      // payerAddButton.addEventListener('click', (event) => {
+      //    event.preventDefault()
+      //    if (validatePayerSelect()) {
+      //       const person = this.budget.people.get(payerSelect.value)
+      //       if (!person) throw new Error('Person not found')
+      //       const input = create('input', { type: 'number', class: 'form-control', 'data-person-uuid': person.uuid, value: this.payers.get(person.uuid) ?? 0, })
+      //    }
+      // })
+
       Modal.body.appendChild(create('form', { class: 'd-flex flex-column gap-2' }, [
          withFloatingLabel('Category', categorySelect),
          withFloatingLabel('Name', nameInput),
@@ -134,7 +169,13 @@ export class Transaction extends Entry {
          create('div', { class: 'input-group' }, [
             withFloatingLabel('Cycle Count', cycleInput),
             withFloatingLabel('Cycle Type', cycleSelect)
-         ])
+         ]),
+         create('h5', {}, 'Payers'),
+         payerList
+         // create('div', { class: 'd-flex gap-2' }, [
+         //    payerSelect,
+         //    payerAddButton
+         // ])
       ]))
 
       const saveButton = Modal.footer.appendChild(create('button', { class: 'btn btn-success' }, 'Save'))

@@ -138,6 +138,7 @@ export const Icons = {
    get Bookmarks() { return create('i', { class: 'bi-bookmarks-fill' }) },
    get QuestionMarkCloud() { return create('i', { class: 'bi-patch-question-fill' }) },
    get Bidirectional() { return create('i', { class: 'bi-arrow-left-right' }) },
+   get Percent() { return create('i', { class: 'bi-percent' }) },
 }
 
 export const Buttons = {
