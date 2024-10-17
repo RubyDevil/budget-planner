@@ -712,14 +712,45 @@
       cycleSelect.options.add(new Option("Month", "month" /* MONTH */, false, this.billing_cycle[1] === "month" /* MONTH */));
       cycleSelect.options.add(new Option("Year", "year" /* YEAR */, false, this.billing_cycle[1] === "year" /* YEAR */));
       const payerList = Modal.body.appendChild(create("ul", { class: "list-group" }));
+      const addPayerListItem = (person, amount) => {
+        const percentInput = create("input", { type: "number", class: "form-control", style: "width: 5em;", "data-person-uuid": person.uuid, value: this.payers.get(person.uuid) ?? 0 });
+        percentInput.addEventListener("input", () => validateForm());
+        const deleteButton = Buttons.Delete;
+        deleteButton.addEventListener("click", () => deleteButton.closest("li")?.remove());
+        payerList.appendChild(create("li", { class: "list-group-item d-flex justify-content-between align-items-center" }, [
+          person.name,
+          create("span", { class: "w-auto d-flex gap-2" }, [
+            create("span", { class: "input-group w-auto" }, [
+              percentInput,
+              create("span", { class: "input-group-text" }, [Icons.Percent])
+            ]),
+            deleteButton
+          ])
+        ]));
+      };
       for (const [uuid, amount] of this.payers) {
         const person = this.budget.people.get(uuid);
         if (!person) throw new Error("Person not found");
-        payerList.appendChild(create("li", { class: "list-group-item d-flex justify-content-between align-items-center" }, [
-          person.name,
-          create("input", { type: "number", class: "form-control", "data-person-uuid": person.uuid, value: amount * 100 })
-        ]));
+        addPayerListItem(person, amount);
       }
+      const payerSelect = create("select", { class: "form-select" });
+      Person.generateSelectOptions(this.budget, payerSelect);
+      const validatePayerSelect = () => {
+        const isInvalid = payerSelect.value === "" || [...payerList.querySelectorAll('input[type="number"]').values()].some((input) => input.getAttribute("data-person-uuid") === payerSelect.value);
+        payerSelect.classList.toggle("is-invalid", isInvalid);
+        if (isInvalid) payerSelect.focus();
+        return !isInvalid;
+      };
+      payerSelect.addEventListener("change", () => validatePayerSelect());
+      const payerAddButton = create("button", { class: "btn btn-primary" }, [Icons.Plus]);
+      payerAddButton.addEventListener("click", (event) => {
+        event.preventDefault();
+        if (validatePayerSelect()) {
+          const person = this.budget.people.get(payerSelect.value);
+          if (!person) throw new Error("Person not found");
+          addPayerListItem(person, 0);
+        }
+      });
       Modal.body.appendChild(create("form", { class: "d-flex flex-column gap-2" }, [
         withFloatingLabel("Category", categorySelect),
         withFloatingLabel("Name", nameInput),
@@ -729,12 +760,12 @@
           withFloatingLabel("Cycle Count", cycleInput),
           withFloatingLabel("Cycle Type", cycleSelect)
         ]),
-        create("h5", {}, "Payers"),
-        payerList
-        // create('div', { class: 'd-flex gap-2' }, [
-        //    payerSelect,
-        //    payerAddButton
-        // ])
+        create("h5", {}, ["Payers ", create("small", { class: "text-muted" }, "(Total must be 100%)")]),
+        payerList,
+        create("div", { class: "d-flex gap-2" }, [
+          payerSelect,
+          payerAddButton
+        ])
       ]));
       const saveButton = Modal.footer.appendChild(create("button", { class: "btn btn-success" }, "Save"));
       saveButton.addEventListener("click", () => {
@@ -743,6 +774,11 @@
           this.name = nameInput.value;
           this.amount = +amountInput.value;
           this.payment_method_uuid = paymentMethodSelect.value;
+          this.billing_cycle = [+cycleInput.value, cycleSelect.value];
+          this.payers.clear();
+          for (const input of payerList.querySelectorAll('input[type="number"]').values())
+            if (input.getAttribute("data-person-uuid"))
+              this.payers.set(input.getAttribute("data-person-uuid"), +input["value"]);
           if (!this.budget.transactions.has(this.uuid))
             this.budget.transactions.set(this.uuid, this);
           Modal.hide();
@@ -758,8 +794,14 @@
         results.push([paymentMethodSelect, paymentMethodSelect.value !== ""]);
         results.push([cycleInput, +cycleInput.value >= _Transaction.Constraints.BillingCycle.Min]);
         results.push([cycleSelect, cycleSelect.value !== ""]);
-        for (const [element, valid] of results)
+        results.push([payerSelect, payerList.children.length > 0]);
+        for (const input of payerList.querySelectorAll('input[type="number"]'))
+          results.push([input, +input["value"] >= 0 && [...payerList.querySelectorAll('input[type="number"]').values()].reduce((acc, input2) => acc + +input2["value"] || 0, 0) === 100]);
+        for (const [element, valid] of results) {
           element.classList.toggle("is-invalid", !valid);
+          element.classList.toggle("border", !valid);
+          element.classList.toggle("border-danger", !valid);
+        }
         return results.every((result) => result[1]);
       }
     }
@@ -1167,7 +1209,7 @@
   var categorySalaries = new Category(budget, { uuid: crypto.randomUUID(), icon: Icons.CashStack.className, name: "Salaries", color: "#00ff00" });
   var categoryBills = new Category(budget, { uuid: crypto.randomUUID(), icon: Icons.Card.className, name: "Bills", color: "#ff0000" });
   var transactionSalary = new Transaction(budget, { uuid: crypto.randomUUID(), category_uuid: categorySalaries.uuid, name: "Salary", amount: 5432.1, payment_method_uuid: paymentMethodBankAccount.uuid, billing_cycle: [1, "month" /* MONTH */], payers: {} });
-  var transactionRent = new Transaction(budget, { uuid: crypto.randomUUID(), category_uuid: categoryBills.uuid, name: "Rent", amount: -1234.56, payment_method_uuid: paymentMethodCash.uuid, billing_cycle: [1, "month" /* MONTH */], payers: { [personMe.uuid]: 0.5, [personOther.uuid]: 0.5 } });
+  var transactionRent = new Transaction(budget, { uuid: crypto.randomUUID(), category_uuid: categoryBills.uuid, name: "Rent", amount: -1234.56, payment_method_uuid: paymentMethodCash.uuid, billing_cycle: [1, "month" /* MONTH */], payers: { [personMe.uuid]: 50, [personOther.uuid]: 50 } });
   var transactionUnknownIncome = new Transaction(budget, { uuid: crypto.randomUUID(), category_uuid: "...", name: "Misc (Unknown)", amount: 1500, payment_method_uuid: paymentMethodCash.uuid, billing_cycle: [1, "month" /* MONTH */], payers: {} });
   var transactionUnknownExpense = new Transaction(budget, { uuid: crypto.randomUUID(), category_uuid: "...", name: "Misc (Unknown)", amount: -150, payment_method_uuid: paymentMethodCash.uuid, billing_cycle: [1, "month" /* MONTH */], payers: {} });
   budget.people.set(personMe.uuid, personMe);
