@@ -11,7 +11,7 @@ a {
    cursor: pointer;
 }
 
-select,
+*:not(.modal) select,
 input.is-valid,
 input.is-invalid {
    background-image: unset !important;
