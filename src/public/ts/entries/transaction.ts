@@ -1,5 +1,6 @@
 import { Budget } from "../budget"
-import { Buttons, create, goToElement, Icons, resetForm, Tooltips } from "../utils"
+import { Modal } from "../modal"
+import { Buttons, create, createInputGroup, goToElement, Icons, resetForm, Tooltips, withFloatingLabel } from "../utils"
 import { Category } from "./category"
 import { CYCLE, CYCLE_DAYS } from "./cycle"
 import { Entry, EntryJson } from "./entry"
@@ -41,11 +42,11 @@ export class Transaction extends Entry {
 
    constructor(budget: Budget, data: TransactionJson) {
       super(budget, data)
-      this.category_uuid = data.category_uuid
-      this.name = data.name
-      this.amount = data.amount
-      this.payment_method_uuid = data.payment_method_uuid
-      this.billing_cycle = data.billing_cycle
+      this.category_uuid = data.category_uuid ?? ''
+      this.name = data.name ?? ''
+      this.amount = data.amount ?? 0
+      this.payment_method_uuid = data.payment_method_uuid ?? ''
+      this.billing_cycle = data.billing_cycle ?? [0, '']
       this.payers = new Map(Object.entries(data.payers ?? {}))
    }
 
@@ -90,18 +91,79 @@ export class Transaction extends Entry {
    }
 
    edit() {
-      Transaction.buildForm(this.row, this.budget, this)
-   }
+      Modal.rebuild('Edit Transaction', true)
 
-   save() {
-      if (Transaction.validateForm(this.row)) {
-         const [categorySelect, nameInput, amountInput, paymentMethodSelect, cycleInput, cycleSelect] = Transaction.getFields(this.row)
-         this.category_uuid = categorySelect.value
-         this.name = nameInput.value
-         this.amount = parseFloat(amountInput.value)
-         this.payment_method_uuid = paymentMethodSelect.value
-         this.billing_cycle = [parseInt(cycleInput.value), cycleSelect.value as CYCLE]
-         this.budget.refreshAll()
+      const updateCategoryColor = () => {
+         const category = this.budget.categories.get(categorySelect.value)
+         if (category) Modal.header.style.backgroundColor = category.accentColor(0.2)
+      }
+      const categorySelect = create('select', { class: 'form-select' })
+      categorySelect.addEventListener('change', () => validateForm() && updateCategoryColor())
+      categorySelect.addEventListener('focusin', () => Category.generateSelectOptions(this.budget, categorySelect))
+      Category.generateSelectOptions(this.budget, categorySelect)
+      categorySelect.value = this.category_uuid
+      updateCategoryColor()
+
+      const nameInput = create('input', { type: 'text', class: 'form-control', value: this.name })
+      nameInput.addEventListener('input', () => validateForm())
+
+      const amountInput = create('input', { type: 'number', class: 'form-control', value: this.amount, step: '0.01' })
+      amountInput.addEventListener('input', () => validateForm())
+
+      const paymentMethodSelect = create('select', { class: 'form-select' })
+      paymentMethodSelect.addEventListener('change', () => validateForm())
+      paymentMethodSelect.addEventListener('focusin', () => PaymentMethod.generateSelectOptions(this.budget, paymentMethodSelect))
+      PaymentMethod.generateSelectOptions(this.budget, paymentMethodSelect)
+      paymentMethodSelect.value = this.payment_method_uuid
+
+      const cycleInput = create('input', { type: 'number', class: 'form-control', value: this.billing_cycle[0] })
+      cycleInput.addEventListener('input', () => validateForm())
+      const cycleSelect = create('select', { class: 'form-select' })
+      cycleSelect.addEventListener('change', () => validateForm())
+      cycleSelect.options.add(new Option('Select...', '', true, false))
+      cycleSelect.options.add(new Option('Day', CYCLE.DAY, false, this.billing_cycle[1] === CYCLE.DAY))
+      cycleSelect.options.add(new Option('Week', CYCLE.WEEK, false, this.billing_cycle[1] === CYCLE.WEEK))
+      cycleSelect.options.add(new Option('Month', CYCLE.MONTH, false, this.billing_cycle[1] === CYCLE.MONTH))
+      cycleSelect.options.add(new Option('Year', CYCLE.YEAR, false, this.billing_cycle[1] === CYCLE.YEAR))
+
+      Modal.body.appendChild(create('form', { class: 'd-flex flex-column gap-2' }, [
+         withFloatingLabel('Category', categorySelect),
+         withFloatingLabel('Name', nameInput),
+         withFloatingLabel('Amount', amountInput),
+         withFloatingLabel('Payment Method', paymentMethodSelect),
+         create('div', { class: 'input-group' }, [
+            withFloatingLabel('Cycle Count', cycleInput),
+            withFloatingLabel('Cycle Type', cycleSelect)
+         ])
+      ]))
+
+      const saveButton = Modal.footer.appendChild(create('button', { class: 'btn btn-success' }, 'Save'))
+      saveButton.addEventListener('click', () => {
+         if (validateForm()) {
+            this.category_uuid = categorySelect.value
+            this.name = nameInput.value
+            this.amount = +amountInput.value
+            this.payment_method_uuid = paymentMethodSelect.value
+            if (!this.budget.transactions.has(this.uuid))
+               this.budget.transactions.set(this.uuid, this)
+            Modal.hide()
+            this.budget.refreshAll()
+         }
+      })
+
+      Modal.show()
+
+      function validateForm() {
+         const results: [HTMLElement, boolean][] = []
+         results.push([categorySelect, categorySelect.value !== ''])
+         results.push([nameInput, nameInput.value.trim().length >= Transaction.Constraints.Name.MinLength && nameInput.value.trim().length <= Transaction.Constraints.Name.MaxLength])
+         results.push([amountInput, !isNaN(+amountInput.value) && +amountInput.value !== 0])
+         results.push([paymentMethodSelect, paymentMethodSelect.value !== ''])
+         results.push([cycleInput, +cycleInput.value >= Transaction.Constraints.BillingCycle.Min])
+         results.push([cycleSelect, cycleSelect.value !== ''])
+         for (const [element, valid] of results)
+            element.classList.toggle('is-invalid', !valid)
+         return results.every(result => result[1])
       }
    }
 
@@ -122,126 +184,6 @@ export class Transaction extends Entry {
          billing_cycle: this.billing_cycle,
          payers: Object.fromEntries(this.payers)
       }
-   }
-
-   static buildForm(row: HTMLTableRowElement, budget: Budget, targetListOrEntry?: Map<string, Transaction> | Transaction) {
-      row.innerHTML = ''
-      // Category
-      const categorySelect = row.insertCell()
-         .appendChild(create('select', { class: 'form-select' }))
-      Category.generateSelectOptions(budget, categorySelect)
-      categorySelect.addEventListener('focusin', (e) => Category.generateSelectOptions(budget, categorySelect))
-      categorySelect.addEventListener('change', this.validateForm.bind(this, row))
-      // Name
-      const nameInput = row.insertCell()
-         .appendChild(create('input', {
-            class: 'form-control',
-            type: 'text',
-            placeholder: 'Name'
-         }))
-      nameInput.addEventListener('input', this.validateForm.bind(this, row))
-      Tooltips.create(nameInput, 'bottom', `${this.Constraints.Name.MinLength} to ${this.Constraints.Name.MaxLength} characters`)
-      // Amount
-      const amountInput = row.insertCell()
-         .appendChild(create('input', {
-            class: 'form-control',
-            type: 'number',
-            placeholder: 'Amount',
-            step: '0.01'
-         }))
-      amountInput.addEventListener('input', this.validateForm.bind(this, row))
-      Tooltips.create(amountInput, 'bottom', 'Non-zero amount, negative for expenses and positive for income')
-      // Payment Method
-      const paymentMethodSelect = row.insertCell()
-         .appendChild(create('select', { class: 'form-select' }))
-      PaymentMethod.generateSelectOptions(budget, paymentMethodSelect)
-      paymentMethodSelect.addEventListener('focusin', (e) => PaymentMethod.generateSelectOptions(budget, paymentMethodSelect))
-      paymentMethodSelect.addEventListener('change', this.validateForm.bind(this, row))
-      // Billing Cycle
-      const group = row.insertCell().appendChild(create('div', { class: 'input-group' }))
-      const cycleInput = group
-         .appendChild(create('input', {
-            class: 'form-control',
-            type: 'number',
-            placeholder: 'Count',
-            step: '1',
-            min: '1'
-         }))
-      cycleInput.addEventListener('input', this.validateForm.bind(this, row))
-      Tooltips.create(cycleInput, 'bottom', 'Number of days, weeks, months, or years. Must be greater than 0.')
-      const cycleSelect = group.appendChild(create('select', { class: 'form-select' }))
-      cycleSelect.options.add(new Option('Cycle', '', true, true))
-      cycleSelect.options.add(new Option('Day', CYCLE.DAY))
-      cycleSelect.options.add(new Option('Week', CYCLE.WEEK))
-      cycleSelect.options.add(new Option('Month', CYCLE.MONTH))
-      cycleSelect.options.add(new Option('Year', CYCLE.YEAR))
-      cycleSelect.options[0].disabled = true
-      cycleSelect.options[0].hidden = true
-      cycleSelect.addEventListener('change', this.validateForm.bind(this, row))
-      // Actions
-      const actions = row.insertCell().appendChild(create('span', { class: 'd-flex gap-2' }))
-      if (targetListOrEntry instanceof Transaction) {
-         actions.appendChild(Buttons.Save).addEventListener('click', () => targetListOrEntry.save())
-         actions.appendChild(Buttons.Cancel).addEventListener('click', () => targetListOrEntry.buildRow())
-      } else if (targetListOrEntry instanceof Map) {
-         actions.appendChild(Buttons.Add).addEventListener('click', (e) => {
-            // Trim values
-            nameInput.value = nameInput.value.trim()
-            if (this.validateForm(row)) {
-               const uuid = crypto.randomUUID()
-               targetListOrEntry.set(uuid, new this(budget, {
-                  uuid: uuid,
-                  category_uuid: categorySelect.value,
-                  name: nameInput.value,
-                  amount: parseFloat(amountInput.value),
-                  payment_method_uuid: paymentMethodSelect.value,
-                  billing_cycle: [parseInt(cycleInput.value), cycleSelect.value as CYCLE],
-                  payers: {}
-               }))
-               budget.refreshAll()
-               resetForm(row)
-            }
-         })
-      }
-      // Data
-      if (targetListOrEntry instanceof Transaction) {
-         row.style.backgroundColor = targetListOrEntry.category?.accentColor() ?? '#ffffff'
-         categorySelect.value = targetListOrEntry.category_uuid
-         nameInput.value = targetListOrEntry.name
-         amountInput.value = targetListOrEntry.amount.toString()
-         paymentMethodSelect.value = targetListOrEntry.payment_method_uuid
-         cycleInput.value = targetListOrEntry.billing_cycle[0].toString()
-         cycleSelect.value = targetListOrEntry.billing_cycle[1]
-      }
-      row.querySelectorAll('td')?.forEach(td => td.style.background = 'none')
-      return row
-   }
-
-   static getFields(form: HTMLTableRowElement) {
-      return [
-         form.cells[0].getElementsByTagName('select')[0], // categorySelect
-         form.cells[1].getElementsByTagName('input')[0], // nameInput
-         form.cells[2].getElementsByTagName('input')[0], // amountInput
-         form.cells[3].getElementsByTagName('select')[0], // paymentMethodSelect
-         form.cells[4].getElementsByTagName('input')[0], // cycleInput
-         form.cells[4].getElementsByTagName('select')[0] // cycleSelect
-      ]
-   }
-
-   static validateForm(form: HTMLTableRowElement) {
-      const [categorySelect, nameInput, amountInput, paymentMethodSelect, cycleInput, cycleSelect] = this.getFields(form)
-      const results: [HTMLElement, boolean][] = []
-      results.push([categorySelect, categorySelect.value !== ''])
-      results.push([nameInput, nameInput.value.trim().length >= Transaction.Constraints.Name.MinLength && nameInput.value.trim().length <= Transaction.Constraints.Name.MaxLength])
-      results.push([amountInput, !isNaN(+amountInput.value) && +amountInput.value !== 0])
-      results.push([paymentMethodSelect, paymentMethodSelect.value !== ''])
-      results.push([cycleInput, +cycleInput.value >= Transaction.Constraints.BillingCycle.Min])
-      results.push([cycleSelect, cycleSelect.value !== ''])
-      for (const [element, valid] of results) {
-         element.classList.toggle('is-invalid', !valid)
-         element.classList.toggle('is-valid', valid)
-      }
-      return results.every(result => result[1])
    }
 
    static generateSelectOptions(budget: Budget, select: HTMLSelectElement) {

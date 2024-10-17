@@ -25,6 +25,5 @@ export abstract class Entry {
    abstract buildRow(): HTMLTableRowElement
    abstract edit(): void
    abstract delete(): void
-   abstract save(): void
    abstract toJson(): EntryJson
 }
