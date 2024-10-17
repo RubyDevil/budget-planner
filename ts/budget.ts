@@ -69,7 +69,7 @@ export class Budget {
       this.refreshPeople = () => {
          this.peopleTBody.innerHTML = ''
          for (const person of this.people.values())
-            this.peopleTBody.append(person.build())
+            this.peopleTBody.append(person.buildRow())
          this.peopleTBody.append(this.peopleForm)
       }
       // Payment Methods
@@ -87,7 +87,7 @@ export class Budget {
       this.refreshPaymentMethods = () => {
          this.paymentMethodsTBody.innerHTML = ''
          for (const paymentMethod of this.paymentMethods.values())
-            this.paymentMethodsTBody.append(paymentMethod.build())
+            this.paymentMethodsTBody.append(paymentMethod.buildRow())
          this.paymentMethodsTBody.append(this.paymentMethodsForm)
       }
       // Categories
@@ -105,7 +105,7 @@ export class Budget {
       this.refreshCategories = () => {
          this.categoriesTBody.innerHTML = ''
          for (const category of this.categories.values())
-            this.categoriesTBody.append(category.build())
+            this.categoriesTBody.append(category.buildRow())
          this.categoriesTBody.append(this.categoriesForm)
       }
       // Transactions
@@ -132,7 +132,7 @@ export class Budget {
                   create('th', { colspan: 6, class: 'text-center', style: `background-color: ${category.accentColor(0.1)}` }, category.name)
                ]))
                for (const transaction of transactions)
-                  this.transactionsTBody.append(transaction.build())
+                  this.transactionsTBody.append(transaction.buildRow())
             }
          }
          const unknownCategoryTransactions = [...this.transactions.values()].filter(transaction => !this.categories.has(transaction.category_uuid))
@@ -141,7 +141,7 @@ export class Budget {
                create('th', { colspan: 6, class: 'text-center bg-body-tertiary' }, 'Unknown')
             ]))
             for (const transaction of unknownCategoryTransactions)
-               this.transactionsTBody.append(transaction.build())
+               this.transactionsTBody.append(transaction.buildRow())
          }
          this.transactionsTBody.append(this.transactionsForm)
       }

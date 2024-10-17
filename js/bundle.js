@@ -223,7 +223,7 @@
     accentColor(amount = 0.05) {
       return blendColors("#ffffff", this.color, amount);
     }
-    build() {
+    buildRow() {
       this.row.style.backgroundColor = this.accentColor();
       this.row.innerHTML = "";
       this.row.append(create("td", { colspan: 2 }, [this.createIcon(), " " + this.name]));
@@ -285,7 +285,7 @@
       const actions = row.insertCell().appendChild(create("span", { class: "d-flex gap-2" }));
       if (editTarget) {
         actions.appendChild(Buttons.Save).addEventListener("click", () => editTarget.save());
-        actions.appendChild(Buttons.Cancel).addEventListener("click", () => editTarget.build());
+        actions.appendChild(Buttons.Cancel).addEventListener("click", () => editTarget.buildRow());
       } else {
         actions.appendChild(Buttons.Add).addEventListener("click", (e) => {
           nameInput.value = nameInput.value.trim();
@@ -364,7 +364,7 @@
     createLink() {
       return create("a", { class: "text-primary" }, [Icons.Person, " " + this.name]);
     }
-    build() {
+    buildRow() {
       this.row.innerHTML = "";
       this.row.insertCell().textContent = this.name;
       const actions = this.row.insertCell().appendChild(create("span", { class: "d-flex gap-2" }));
@@ -406,7 +406,7 @@
       const actions = row.insertCell().appendChild(create("span", { class: "d-flex gap-2" }));
       if (editTarget) {
         actions.appendChild(Buttons.Save).addEventListener("click", () => editTarget.save());
-        actions.appendChild(Buttons.Cancel).addEventListener("click", () => editTarget.build());
+        actions.appendChild(Buttons.Cancel).addEventListener("click", () => editTarget.buildRow());
       } else {
         actions.appendChild(Buttons.Add).addEventListener("click", (e) => {
           nameInput.value = nameInput.value.trim();
@@ -468,7 +468,7 @@
     createLink() {
       return create("a", { class: "text-primary" }, [Icons.Dollar, " " + this.name]);
     }
-    build() {
+    buildRow() {
       this.row.innerHTML = "";
       this.row.insertCell().textContent = this.name;
       this.row.insertCell().appendChild(this.owner?.createLink() ?? Entry.unknownLink()).addEventListener("click", (e) => goToElement(this.owner?.row));
@@ -517,7 +517,7 @@
       const actions = row.insertCell().appendChild(create("span", { class: "d-flex gap-2" }));
       if (editTarget) {
         actions.appendChild(Buttons.Save).addEventListener("click", () => editTarget.save());
-        actions.appendChild(Buttons.Cancel).addEventListener("click", () => editTarget.build());
+        actions.appendChild(Buttons.Cancel).addEventListener("click", () => editTarget.buildRow());
       } else {
         actions.appendChild(Buttons.Add).addEventListener("click", (e) => {
           nameInput.value = nameInput.value.trim();
@@ -609,7 +609,7 @@
     createLink() {
       return create("a", { class: "text-primary" }, [Icons.Bidirectional, " " + this.name]);
     }
-    build() {
+    buildRow() {
       this.row.style.backgroundColor = this.category?.accentColor() ?? "#ffffff";
       this.row.innerHTML = "";
       this.row.insertCell().appendChild(this.category?.createLink() ?? Entry.unknownLink()).addEventListener("click", (e) => goToElement(this.category?.row));
@@ -707,7 +707,7 @@
       const actions = row.insertCell().appendChild(create("span", { class: "d-flex gap-2" }));
       if (targetListOrEntry instanceof _Transaction) {
         actions.appendChild(Buttons.Save).addEventListener("click", () => targetListOrEntry.save());
-        actions.appendChild(Buttons.Cancel).addEventListener("click", () => targetListOrEntry.build());
+        actions.appendChild(Buttons.Cancel).addEventListener("click", () => targetListOrEntry.buildRow());
       } else if (targetListOrEntry instanceof Map) {
         actions.appendChild(Buttons.Add).addEventListener("click", (e) => {
           nameInput.value = nameInput.value.trim();
@@ -833,7 +833,7 @@
       this.refreshPeople = () => {
         this.peopleTBody.innerHTML = "";
         for (const person of this.people.values())
-          this.peopleTBody.append(person.build());
+          this.peopleTBody.append(person.buildRow());
         this.peopleTBody.append(this.peopleForm);
       };
       this.paymentMethods = /* @__PURE__ */ new Map();
@@ -850,7 +850,7 @@
       this.refreshPaymentMethods = () => {
         this.paymentMethodsTBody.innerHTML = "";
         for (const paymentMethod of this.paymentMethods.values())
-          this.paymentMethodsTBody.append(paymentMethod.build());
+          this.paymentMethodsTBody.append(paymentMethod.buildRow());
         this.paymentMethodsTBody.append(this.paymentMethodsForm);
       };
       this.categories = /* @__PURE__ */ new Map();
@@ -867,7 +867,7 @@
       this.refreshCategories = () => {
         this.categoriesTBody.innerHTML = "";
         for (const category of this.categories.values())
-          this.categoriesTBody.append(category.build());
+          this.categoriesTBody.append(category.buildRow());
         this.categoriesTBody.append(this.categoriesForm);
       };
       this.transactions = /* @__PURE__ */ new Map();
@@ -893,7 +893,7 @@
               create("th", { colspan: 6, class: "text-center", style: `background-color: ${category.accentColor(0.1)}` }, category.name)
             ]));
             for (const transaction of transactions)
-              this.transactionsTBody.append(transaction.build());
+              this.transactionsTBody.append(transaction.buildRow());
           }
         }
         const unknownCategoryTransactions = [...this.transactions.values()].filter((transaction) => !this.categories.has(transaction.category_uuid));
@@ -902,7 +902,7 @@
             create("th", { colspan: 6, class: "text-center bg-body-tertiary" }, "Unknown")
           ]));
           for (const transaction of unknownCategoryTransactions)
-            this.transactionsTBody.append(transaction.build());
+            this.transactionsTBody.append(transaction.buildRow());
         }
         this.transactionsTBody.append(this.transactionsForm);
       };

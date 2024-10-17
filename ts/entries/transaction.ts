@@ -54,7 +54,7 @@ export class Transaction extends Entry {
       return create('a', { class: 'text-primary' }, [Icons.Bidirectional, ' ' + this.name])
    }
 
-   build() {
+   buildRow() {
       this.row.style.backgroundColor = this.category?.accentColor() ?? '#ffffff'
       this.row.innerHTML = ''
       // Name and Category
@@ -175,7 +175,7 @@ export class Transaction extends Entry {
       const actions = row.insertCell().appendChild(create('span', { class: 'd-flex gap-2' }))
       if (targetListOrEntry instanceof Transaction) {
          actions.appendChild(Buttons.Save).addEventListener('click', () => targetListOrEntry.save())
-         actions.appendChild(Buttons.Cancel).addEventListener('click', () => targetListOrEntry.build())
+         actions.appendChild(Buttons.Cancel).addEventListener('click', () => targetListOrEntry.buildRow())
       } else if (targetListOrEntry instanceof Map) {
          actions.appendChild(Buttons.Add).addEventListener('click', (e) => {
             // Trim values

@@ -22,7 +22,7 @@ export abstract class Entry {
       return create('a', { class: 'text-danger' }, 'Unknown')
    }
 
-   abstract build(editMode?: boolean): HTMLTableRowElement
+   abstract buildRow(): HTMLTableRowElement
    abstract edit(): void
    abstract delete(): void
    abstract save(): void
