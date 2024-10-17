@@ -15,7 +15,7 @@ const paymentMethodBankAccount = new PaymentMethod(budget, { uuid: crypto.random
 const categorySalaries = new Category(budget, { uuid: crypto.randomUUID(), icon: Icons.CashStack.className, name: 'Salaries', color: '#00ff00' })
 const categoryBills = new Category(budget, { uuid: crypto.randomUUID(), icon: Icons.Card.className, name: 'Bills', color: '#ff0000' })
 const transactionSalary = new Transaction(budget, { uuid: crypto.randomUUID(), category_uuid: categorySalaries.uuid, name: 'Salary', amount: 5432.10, payment_method_uuid: paymentMethodBankAccount.uuid, billing_cycle: [1, CYCLE.MONTH], payers: {} })
-const transactionRent = new Transaction(budget, { uuid: crypto.randomUUID(), category_uuid: categoryBills.uuid, name: 'Rent', amount: -1234.56, payment_method_uuid: paymentMethodCash.uuid, billing_cycle: [1, CYCLE.MONTH], payers: { [personMe.uuid]: 0.5, [personOther.uuid]: 0.5 } })
+const transactionRent = new Transaction(budget, { uuid: crypto.randomUUID(), category_uuid: categoryBills.uuid, name: 'Rent', amount: -1234.56, payment_method_uuid: paymentMethodCash.uuid, billing_cycle: [1, CYCLE.MONTH], payers: { [personMe.uuid]: 50, [personOther.uuid]: 50 } })
 const transactionUnknownIncome = new Transaction(budget, { uuid: crypto.randomUUID(), category_uuid: '...', name: 'Misc (Unknown)', amount: 1500, payment_method_uuid: paymentMethodCash.uuid, billing_cycle: [1, CYCLE.MONTH], payers: {} })
 const transactionUnknownExpense = new Transaction(budget, { uuid: crypto.randomUUID(), category_uuid: '...', name: 'Misc (Unknown)', amount: -150, payment_method_uuid: paymentMethodCash.uuid, billing_cycle: [1, CYCLE.MONTH], payers: {} })
 
