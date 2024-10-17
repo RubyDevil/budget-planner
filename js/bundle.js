@@ -713,7 +713,7 @@
       cycleSelect.options.add(new Option("Year", "year" /* YEAR */, false, this.billing_cycle[1] === "year" /* YEAR */));
       const payerList = Modal.body.appendChild(create("ul", { class: "list-group" }));
       const addPayerListItem = (person, amount) => {
-        const percentInput = create("input", { type: "number", class: "form-control", style: "width: 5em;", "data-person-uuid": person.uuid, value: this.payers.get(person.uuid) ?? 0 });
+        const percentInput = create("input", { type: "number", class: "form-control", style: "width: 5em;", "data-person-uuid": person.uuid, value: this.payers.get(person.uuid) ?? amount });
         percentInput.addEventListener("input", () => validateForm());
         const deleteButton = Buttons.Delete;
         deleteButton.addEventListener("click", () => deleteButton.closest("li")?.remove());
