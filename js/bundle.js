@@ -12,6 +12,10 @@
         else element.appendChild(child);
     return element;
   }
+  function withFloatingLabel(label, control) {
+    const id = control.id ?? (control.id = Math.random().toString(36).substring(2));
+    return create("div", { class: "form-floating" }, [control, create("label", { class: "form-label", for: id }, label)]);
+  }
   function formatMoneyCell(cell, money, autoColor) {
     if (autoColor)
       cell.classList.add("monospace", money >= 0 ? "text-success" : "text-danger");
@@ -334,7 +338,7 @@
     }
     static generateSelectOptions(budget2, select) {
       select.innerHTML = "";
-      select.options.add(create("option", { value: "", selected: "", disabled: "", hidden: "" }, "Category"));
+      select.options.add(create("option", { value: "", selected: "", disabled: "", hidden: "" }, "Select..."));
       for (const category of budget2.categories.values())
         select.options.add(create("option", { value: category.uuid }, category.name));
     }
@@ -441,7 +445,7 @@
     }
     static generateSelectOptions(budget2, select) {
       select.innerHTML = "";
-      select.options.add(create("option", { value: "", selected: "", disabled: "", hidden: "" }, "Person"));
+      select.options.add(create("option", { value: "", selected: "", disabled: "", hidden: "" }, "Select..."));
       for (const person of budget2.people.values())
         select.options.add(create("option", { value: person.uuid }, person.name));
     }
@@ -560,9 +564,46 @@
     }
     static generateSelectOptions(budget2, select) {
       select.innerHTML = "";
-      select.options.add(create("option", { value: "", selected: "", disabled: "", hidden: "" }, "Payment Method"));
+      select.options.add(create("option", { value: "", selected: "", disabled: "", hidden: "" }, "Select..."));
       for (const paymentMethod of budget2.paymentMethods.values())
         select.options.add(create("option", { value: paymentMethod.uuid }, paymentMethod.name));
+    }
+  };
+
+  // src/public/ts/modal.ts
+  var Modal = class {
+    static root = document.body.appendChild(create("div", { class: "modal fade", tabindex: -1, "data-bs-backdrop": "static", "data-bs-keyboard": "false" }));
+    static dialog = this.root.appendChild(create("div", { class: "modal-dialog modal-dialog-centered modal-dialog-scrollable" }));
+    static content = this.dialog.appendChild(create("div", { class: "modal-content" }));
+    static header = this.content.appendChild(create("div", { class: "modal-header" }));
+    static body = this.content.appendChild(create("div", { class: "modal-body container-fluid" }));
+    static footer = this.content.appendChild(create("div", { class: "modal-footer" }));
+    static title = this.header.appendChild(create("h5", { class: "modal-title" }));
+    static #closeButton = this.header.appendChild(create("button", { type: "button", class: "btn-close", "data-bs-dismiss": "modal", "aria-label": "Close" }));
+    /* @ts-ignore */
+    static #bsInstance = new bootstrap.Modal(this.root);
+    static rebuild(title, dismissable, callback) {
+      this.root = document.body.appendChild(create("div", { class: "modal fade", tabindex: -1, "data-bs-backdrop": dismissable || "static", "data-bs-keyboard": dismissable }));
+      this.dialog = this.root.appendChild(create("div", { class: "modal-dialog modal-dialog-centered modal-dialog-scrollable" }));
+      this.content = this.dialog.appendChild(create("div", { class: "modal-content" }));
+      this.header = this.content.appendChild(create("div", { class: "modal-header" }));
+      this.body = this.content.appendChild(create("div", { class: "modal-body container-fluid" }));
+      this.footer = this.content.appendChild(create("div", { class: "modal-footer" }));
+      this.title = this.header.appendChild(create("h5", { class: "modal-title" }, title));
+      this.#closeButton = this.header.appendChild(create("button", { type: "button", class: "btn-close", "data-bs-dismiss": "modal", "aria-label": "Close" }));
+      if (!dismissable) this.#closeButton.remove();
+      this.#bsInstance.dispose();
+      this.#bsInstance = new bootstrap.Modal(this.root);
+      this.root.addEventListener("hidden.bs.modal", () => callback?.());
+    }
+    static show() {
+      this.#bsInstance.show();
+    }
+    static hide() {
+      this.#bsInstance.hide();
+    }
+    static toggle() {
+      this.#bsInstance.toggle();
     }
   };
 
@@ -597,11 +638,11 @@
     }
     constructor(budget2, data) {
       super(budget2, data);
-      this.category_uuid = data.category_uuid;
-      this.name = data.name;
-      this.amount = data.amount;
-      this.payment_method_uuid = data.payment_method_uuid;
-      this.billing_cycle = data.billing_cycle;
+      this.category_uuid = data.category_uuid ?? "";
+      this.name = data.name ?? "";
+      this.amount = data.amount ?? 0;
+      this.payment_method_uuid = data.payment_method_uuid ?? "";
+      this.billing_cycle = data.billing_cycle ?? [0, ""];
       this.payers = new Map(Object.entries(data.payers ?? {}));
     }
     amountFor(targetDays, targetPerson) {
@@ -635,17 +676,70 @@
       return this.row;
     }
     edit() {
-      _Transaction.buildForm(this.row, this.budget, this);
-    }
-    save() {
-      if (_Transaction.validateForm(this.row)) {
-        const [categorySelect, nameInput, amountInput, paymentMethodSelect, cycleInput, cycleSelect] = _Transaction.getFields(this.row);
-        this.category_uuid = categorySelect.value;
-        this.name = nameInput.value;
-        this.amount = parseFloat(amountInput.value);
-        this.payment_method_uuid = paymentMethodSelect.value;
-        this.billing_cycle = [parseInt(cycleInput.value), cycleSelect.value];
-        this.budget.refreshAll();
+      Modal.rebuild("Edit Transaction", true);
+      const updateCategoryColor = () => {
+        const category = this.budget.categories.get(categorySelect.value);
+        if (category) Modal.header.style.backgroundColor = category.accentColor(0.2);
+      };
+      const categorySelect = create("select", { class: "form-select" });
+      categorySelect.addEventListener("change", () => validateForm() && updateCategoryColor());
+      categorySelect.addEventListener("focusin", () => Category.generateSelectOptions(this.budget, categorySelect));
+      Category.generateSelectOptions(this.budget, categorySelect);
+      categorySelect.value = this.category_uuid;
+      updateCategoryColor();
+      const nameInput = create("input", { type: "text", class: "form-control", value: this.name });
+      nameInput.addEventListener("input", () => validateForm());
+      const amountInput = create("input", { type: "number", class: "form-control", value: this.amount, step: "0.01" });
+      amountInput.addEventListener("input", () => validateForm());
+      const paymentMethodSelect = create("select", { class: "form-select" });
+      paymentMethodSelect.addEventListener("change", () => validateForm());
+      paymentMethodSelect.addEventListener("focusin", () => PaymentMethod.generateSelectOptions(this.budget, paymentMethodSelect));
+      PaymentMethod.generateSelectOptions(this.budget, paymentMethodSelect);
+      paymentMethodSelect.value = this.payment_method_uuid;
+      const cycleInput = create("input", { type: "number", class: "form-control", value: this.billing_cycle[0] });
+      cycleInput.addEventListener("input", () => validateForm());
+      const cycleSelect = create("select", { class: "form-select" });
+      cycleSelect.addEventListener("change", () => validateForm());
+      cycleSelect.options.add(new Option("Select...", "", true, false));
+      cycleSelect.options.add(new Option("Day", "day" /* DAY */, false, this.billing_cycle[1] === "day" /* DAY */));
+      cycleSelect.options.add(new Option("Week", "week" /* WEEK */, false, this.billing_cycle[1] === "week" /* WEEK */));
+      cycleSelect.options.add(new Option("Month", "month" /* MONTH */, false, this.billing_cycle[1] === "month" /* MONTH */));
+      cycleSelect.options.add(new Option("Year", "year" /* YEAR */, false, this.billing_cycle[1] === "year" /* YEAR */));
+      Modal.body.appendChild(create("form", { class: "d-flex flex-column gap-2" }, [
+        withFloatingLabel("Category", categorySelect),
+        withFloatingLabel("Name", nameInput),
+        withFloatingLabel("Amount", amountInput),
+        withFloatingLabel("Payment Method", paymentMethodSelect),
+        create("div", { class: "input-group" }, [
+          withFloatingLabel("Cycle Count", cycleInput),
+          withFloatingLabel("Cycle Type", cycleSelect)
+        ])
+      ]));
+      const saveButton = Modal.footer.appendChild(create("button", { class: "btn btn-success" }, "Save"));
+      saveButton.addEventListener("click", () => {
+        if (validateForm()) {
+          this.category_uuid = categorySelect.value;
+          this.name = nameInput.value;
+          this.amount = +amountInput.value;
+          this.payment_method_uuid = paymentMethodSelect.value;
+          if (!this.budget.transactions.has(this.uuid))
+            this.budget.transactions.set(this.uuid, this);
+          Modal.hide();
+          this.budget.refreshAll();
+        }
+      });
+      Modal.show();
+      function validateForm() {
+        const results = [];
+        results.push([categorySelect, categorySelect.value !== ""]);
+        results.push([nameInput, nameInput.value.trim().length >= _Transaction.Constraints.Name.MinLength && nameInput.value.trim().length <= _Transaction.Constraints.Name.MaxLength]);
+        results.push([amountInput, !isNaN(+amountInput.value) && +amountInput.value !== 0]);
+        results.push([paymentMethodSelect, paymentMethodSelect.value !== ""]);
+        results.push([cycleInput, +cycleInput.value >= _Transaction.Constraints.BillingCycle.Min]);
+        results.push([cycleSelect, cycleSelect.value !== ""]);
+        for (const [element, valid] of results)
+          element.classList.toggle("is-invalid", !valid);
+        return results.every((result) => result[1]);
       }
     }
     delete() {
@@ -664,116 +758,6 @@
         billing_cycle: this.billing_cycle,
         payers: Object.fromEntries(this.payers)
       };
-    }
-    static buildForm(row, budget2, targetListOrEntry) {
-      row.innerHTML = "";
-      const categorySelect = row.insertCell().appendChild(create("select", { class: "form-select" }));
-      Category.generateSelectOptions(budget2, categorySelect);
-      categorySelect.addEventListener("focusin", (e) => Category.generateSelectOptions(budget2, categorySelect));
-      categorySelect.addEventListener("change", this.validateForm.bind(this, row));
-      const nameInput = row.insertCell().appendChild(create("input", {
-        class: "form-control",
-        type: "text",
-        placeholder: "Name"
-      }));
-      nameInput.addEventListener("input", this.validateForm.bind(this, row));
-      Tooltips.create(nameInput, "bottom", `${this.Constraints.Name.MinLength} to ${this.Constraints.Name.MaxLength} characters`);
-      const amountInput = row.insertCell().appendChild(create("input", {
-        class: "form-control",
-        type: "number",
-        placeholder: "Amount",
-        step: "0.01"
-      }));
-      amountInput.addEventListener("input", this.validateForm.bind(this, row));
-      Tooltips.create(amountInput, "bottom", "Non-zero amount, negative for expenses and positive for income");
-      const paymentMethodSelect = row.insertCell().appendChild(create("select", { class: "form-select" }));
-      PaymentMethod.generateSelectOptions(budget2, paymentMethodSelect);
-      paymentMethodSelect.addEventListener("focusin", (e) => PaymentMethod.generateSelectOptions(budget2, paymentMethodSelect));
-      paymentMethodSelect.addEventListener("change", this.validateForm.bind(this, row));
-      const group = row.insertCell().appendChild(create("div", { class: "input-group" }));
-      const cycleInput = group.appendChild(create("input", {
-        class: "form-control",
-        type: "number",
-        placeholder: "Count",
-        step: "1",
-        min: "1"
-      }));
-      cycleInput.addEventListener("input", this.validateForm.bind(this, row));
-      Tooltips.create(cycleInput, "bottom", "Number of days, weeks, months, or years. Must be greater than 0.");
-      const cycleSelect = group.appendChild(create("select", { class: "form-select" }));
-      cycleSelect.options.add(new Option("Cycle", "", true, true));
-      cycleSelect.options.add(new Option("Day", "day" /* DAY */));
-      cycleSelect.options.add(new Option("Week", "week" /* WEEK */));
-      cycleSelect.options.add(new Option("Month", "month" /* MONTH */));
-      cycleSelect.options.add(new Option("Year", "year" /* YEAR */));
-      cycleSelect.options[0].disabled = true;
-      cycleSelect.options[0].hidden = true;
-      cycleSelect.addEventListener("change", this.validateForm.bind(this, row));
-      const actions = row.insertCell().appendChild(create("span", { class: "d-flex gap-2" }));
-      if (targetListOrEntry instanceof _Transaction) {
-        actions.appendChild(Buttons.Save).addEventListener("click", () => targetListOrEntry.save());
-        actions.appendChild(Buttons.Cancel).addEventListener("click", () => targetListOrEntry.buildRow());
-      } else if (targetListOrEntry instanceof Map) {
-        actions.appendChild(Buttons.Add).addEventListener("click", (e) => {
-          nameInput.value = nameInput.value.trim();
-          if (this.validateForm(row)) {
-            const uuid = crypto.randomUUID();
-            targetListOrEntry.set(uuid, new this(budget2, {
-              uuid,
-              category_uuid: categorySelect.value,
-              name: nameInput.value,
-              amount: parseFloat(amountInput.value),
-              payment_method_uuid: paymentMethodSelect.value,
-              billing_cycle: [parseInt(cycleInput.value), cycleSelect.value],
-              payers: {}
-            }));
-            budget2.refreshAll();
-            resetForm(row);
-          }
-        });
-      }
-      if (targetListOrEntry instanceof _Transaction) {
-        row.style.backgroundColor = targetListOrEntry.category?.accentColor() ?? "#ffffff";
-        categorySelect.value = targetListOrEntry.category_uuid;
-        nameInput.value = targetListOrEntry.name;
-        amountInput.value = targetListOrEntry.amount.toString();
-        paymentMethodSelect.value = targetListOrEntry.payment_method_uuid;
-        cycleInput.value = targetListOrEntry.billing_cycle[0].toString();
-        cycleSelect.value = targetListOrEntry.billing_cycle[1];
-      }
-      row.querySelectorAll("td")?.forEach((td) => td.style.background = "none");
-      return row;
-    }
-    static getFields(form) {
-      return [
-        form.cells[0].getElementsByTagName("select")[0],
-        // categorySelect
-        form.cells[1].getElementsByTagName("input")[0],
-        // nameInput
-        form.cells[2].getElementsByTagName("input")[0],
-        // amountInput
-        form.cells[3].getElementsByTagName("select")[0],
-        // paymentMethodSelect
-        form.cells[4].getElementsByTagName("input")[0],
-        // cycleInput
-        form.cells[4].getElementsByTagName("select")[0]
-        // cycleSelect
-      ];
-    }
-    static validateForm(form) {
-      const [categorySelect, nameInput, amountInput, paymentMethodSelect, cycleInput, cycleSelect] = this.getFields(form);
-      const results = [];
-      results.push([categorySelect, categorySelect.value !== ""]);
-      results.push([nameInput, nameInput.value.trim().length >= _Transaction.Constraints.Name.MinLength && nameInput.value.trim().length <= _Transaction.Constraints.Name.MaxLength]);
-      results.push([amountInput, !isNaN(+amountInput.value) && +amountInput.value !== 0]);
-      results.push([paymentMethodSelect, paymentMethodSelect.value !== ""]);
-      results.push([cycleInput, +cycleInput.value >= _Transaction.Constraints.BillingCycle.Min]);
-      results.push([cycleSelect, cycleSelect.value !== ""]);
-      for (const [element, valid] of results) {
-        element.classList.toggle("is-invalid", !valid);
-        element.classList.toggle("is-valid", valid);
-      }
-      return results.every((result) => result[1]);
     }
     static generateSelectOptions(budget2, select) {
       select.innerHTML = "";
@@ -807,7 +791,7 @@
     transactionsTable;
     transactionsTHead;
     transactionsTBody;
-    transactionsForm;
+    transactionsAddButton;
     refreshTransactions;
     summaryPersonSelect;
     summaryCycleInput;
@@ -889,8 +873,8 @@
         create("th", { scope: "col", class: "fit" }, "Billing Cycle"),
         create("th", { scope: "col", class: "fit" }, "Actions")
       );
-      this.transactionsForm = create("tr");
-      Transaction.buildForm(this.transactionsForm, this, this.transactions);
+      this.transactionsAddButton = create("button", { class: "btn btn-success" }, ["Add ", Icons.Plus]);
+      this.transactionsAddButton.addEventListener("click", () => new Transaction(this, {}).edit());
       this.refreshTransactions = () => {
         this.transactionsTBody.innerHTML = "";
         for (const category of this.categories.values()) {
@@ -911,7 +895,6 @@
           for (const transaction of unknownCategoryTransactions)
             this.transactionsTBody.append(transaction.buildRow());
         }
-        this.transactionsTBody.append(this.transactionsForm);
       };
       this.summaryPersonSelect = create("select", { class: "form-select w-auto" });
       this.summaryPersonSelect.addEventListener("change", () => this.refreshSummary());
@@ -1112,7 +1095,7 @@
         create("h2", { class: "fit mt-5" }, [Icons.Bookmarks, " Categories"]),
         this.categoriesTable,
         create("a", { href: "https://icons.getbootstrap.com/#icons", target: "_blank" }, "See the full list of icons"),
-        create("h2", { class: "fit mt-5" }, [Icons.Bidirectional, " Transactions"]),
+        create("h2", { class: "fit mt-5" }, [Icons.Bidirectional, " Transactions ", this.transactionsAddButton]),
         this.transactionsTable,
         create("div", { class: "d-flex gap-3 mt-5" }, [
           create("h2", { style: "white-space: nowrap" }, [Icons.BarChart, " Summary"]),

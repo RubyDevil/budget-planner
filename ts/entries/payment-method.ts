@@ -144,7 +144,7 @@ export class PaymentMethod extends Entry {
 
    static generateSelectOptions(budget: Budget, select: HTMLSelectElement) {
       select.innerHTML = ''
-      select.options.add(create('option', { value: '', selected: '', disabled: '', hidden: '' }, 'Payment Method'))
+      select.options.add(create('option', { value: '', selected: '', disabled: '', hidden: '' }, 'Select...'))
       for (const paymentMethod of budget.paymentMethods.values())
          select.options.add(create('option', { value: paymentMethod.uuid }, paymentMethod.name))
    }

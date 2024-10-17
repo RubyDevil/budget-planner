@@ -117,7 +117,7 @@ export class Person extends Entry {
 
    static generateSelectOptions(budget: Budget, select: HTMLSelectElement) {
       select.innerHTML = ''
-      select.options.add(create('option', { value: '', selected: '', disabled: '', hidden: '' }, 'Person'))
+      select.options.add(create('option', { value: '', selected: '', disabled: '', hidden: '' }, 'Select...'))
       for (const person of budget.people.values())
          select.options.add(create('option', { value: person.uuid }, person.name))
    }

@@ -3,7 +3,7 @@ import { CYCLE, CYCLE_DAYS } from "./entries/cycle.js"
 import { Entry } from "./entries/entry.js"
 import { PaymentMethod } from "./entries/payment-method.js"
 import { Person } from "./entries/person.js"
-import { Transaction } from "./entries/transaction.js"
+import { Transaction, TransactionJson } from "./entries/transaction.js"
 import { create, formatMoney, formatMoneyCell, goToElement, Icons, Tooltips } from "./utils.js"
 
 export class Budget {
@@ -32,7 +32,7 @@ export class Budget {
    transactionsTable: HTMLTableElement
    transactionsTHead: HTMLTableSectionElement
    transactionsTBody: HTMLTableSectionElement
-   transactionsForm: HTMLTableRowElement
+   transactionsAddButton: HTMLButtonElement
    refreshTransactions: () => void
 
    summaryPersonSelect: HTMLSelectElement
@@ -122,8 +122,8 @@ export class Budget {
          create('th', { scope: 'col', class: 'fit' }, 'Billing Cycle'),
          create('th', { scope: 'col', class: 'fit' }, 'Actions')
       )
-      this.transactionsForm = create('tr')
-      Transaction.buildForm(this.transactionsForm, this, this.transactions)
+      this.transactionsAddButton = create('button', { class: 'btn btn-success' }, ['Add ', Icons.Plus])
+      this.transactionsAddButton.addEventListener('click', () => new Transaction(this, <TransactionJson>{}).edit());
       this.refreshTransactions = () => {
          this.transactionsTBody.innerHTML = ''
          for (const category of this.categories.values()) {
@@ -144,7 +144,7 @@ export class Budget {
             for (const transaction of unknownCategoryTransactions)
                this.transactionsTBody.append(transaction.buildRow())
          }
-         this.transactionsTBody.append(this.transactionsForm)
+         // this.transactionsTBody.append(this.transactionsAddButton)
       }
       // Summary
       this.summaryPersonSelect = create('select', { class: 'form-select w-auto' })
@@ -345,7 +345,7 @@ export class Budget {
          create('h2', { class: 'fit mt-5' }, [Icons.Bookmarks, ' Categories']),
          this.categoriesTable,
          create('a', { href: 'https://icons.getbootstrap.com/#icons', target: '_blank' }, 'See the full list of icons'),
-         create('h2', { class: 'fit mt-5' }, [Icons.Bidirectional, ' Transactions']),
+         create('h2', { class: 'fit mt-5' }, [Icons.Bidirectional, ' Transactions ', this.transactionsAddButton]),
          this.transactionsTable,
          create('div', { class: 'd-flex gap-3 mt-5' }, [
             create('h2', { style: 'white-space: nowrap' }, [Icons.BarChart, ' Summary']),

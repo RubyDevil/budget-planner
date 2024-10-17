@@ -17,6 +17,11 @@ export function createInputGroup(icon: HTMLElement) {
    return inputGroup
 }
 
+export function withFloatingLabel(label: string, control: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement) {
+   const id = control.id ?? (control.id = Math.random().toString(36).substring(2));
+   return create('div', { class: 'form-floating' }, [control, create('label', { class: 'form-label', for: id }, label)])
+}
+
 export function formatMoneyCell(cell: HTMLTableCellElement, money: number, autoColor?: boolean) {
    if (autoColor)
       cell.classList.add('monospace', money >= 0 ? 'text-success' : 'text-danger')

@@ -165,7 +165,7 @@ export class Category extends Entry {
 
    static generateSelectOptions(budget: Budget, select: HTMLSelectElement) {
       select.innerHTML = ''
-      select.options.add(create('option', { value: '', selected: '', disabled: '', hidden: '' }, 'Category'))
+      select.options.add(create('option', { value: '', selected: '', disabled: '', hidden: '' }, 'Select...'))
       for (const category of budget.categories.values())
          select.options.add(create('option', { value: category.uuid }, category.name))
    }
