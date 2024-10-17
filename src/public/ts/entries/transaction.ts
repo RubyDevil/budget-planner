@@ -170,7 +170,7 @@ export class Transaction extends Entry {
          if (validatePayerSelect()) {
             const person = this.budget.people.get(payerSelect.value)
             if (!person) throw new Error('Person not found')
-            addPayerListItem(person, 0)
+            addPayerListItem(person, 100)
          }
       })
 

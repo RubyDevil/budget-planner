@@ -123,7 +123,7 @@ export class Budget {
          create('th', { scope: 'col', class: 'fit' }, 'Actions')
       )
       this.transactionsAddButton = create('button', { class: 'btn btn-success' }, ['Add ', Icons.Plus])
-      this.transactionsAddButton.addEventListener('click', () => new Transaction(this, <TransactionJson>{}).edit());
+      this.transactionsAddButton.addEventListener('click', () => new Transaction(this, <TransactionJson>{ uuid: crypto.randomUUID() }).edit());
       this.refreshTransactions = () => {
          this.transactionsTBody.innerHTML = ''
          for (const category of this.categories.values()) {
