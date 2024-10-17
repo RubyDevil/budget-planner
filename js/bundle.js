@@ -748,7 +748,7 @@
         if (validatePayerSelect()) {
           const person = this.budget.people.get(payerSelect.value);
           if (!person) throw new Error("Person not found");
-          addPayerListItem(person, 0);
+          addPayerListItem(person, 100);
         }
       });
       Modal.body.appendChild(create("form", { class: "d-flex flex-column gap-2" }, [
@@ -937,7 +937,7 @@
         create("th", { scope: "col", class: "fit" }, "Actions")
       );
       this.transactionsAddButton = create("button", { class: "btn btn-success" }, ["Add ", Icons.Plus]);
-      this.transactionsAddButton.addEventListener("click", () => new Transaction(this, {}).edit());
+      this.transactionsAddButton.addEventListener("click", () => new Transaction(this, { uuid: crypto.randomUUID() }).edit());
       this.refreshTransactions = () => {
         this.transactionsTBody.innerHTML = "";
         for (const category of this.categories.values()) {
