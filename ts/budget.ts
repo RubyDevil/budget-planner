@@ -35,6 +35,7 @@ export class Budget {
    transactionsForm: HTMLTableRowElement
    refreshTransactions: () => void
 
+   summaryPersonSelect: HTMLSelectElement
    summaryCycleInput: HTMLInputElement
    summaryCycleSelect: HTMLSelectElement
    summaryIncomeChart: HTMLDivElement
@@ -146,6 +147,8 @@ export class Budget {
          this.transactionsTBody.append(this.transactionsForm)
       }
       // Summary
+      this.summaryPersonSelect = create('select', { class: 'form-select w-auto' })
+      this.summaryPersonSelect.addEventListener('change', () => this.refreshSummary())
       const cycleGroup = create('div', { class: 'input-group' })
       this.summaryCycleInput = cycleGroup
          .appendChild(create('input', {
@@ -165,7 +168,6 @@ export class Budget {
       this.summaryCycleSelect.options.add(new Option('Year', CYCLE.YEAR, false, false))
       this.summaryCycleSelect.addEventListener('change', () => this.validateSummaryCycleChange())
       this.validateSummaryCycleChange = () => {
-         console.log(+this.summaryCycleInput.value)
          if (!this.summaryCycleInput.value || +this.summaryCycleInput.value < 1)
             return this.summaryCycleInput.classList.add('is-invalid')
          else {
@@ -188,6 +190,14 @@ export class Budget {
       this.summaryExpenseChartLegend = this.summaryExpenseChart.appendChild(create('div', { class: 'd-flex justify-content-around align-items-center w-100 flex-wrap gap-1' }))
       this.summaryExpenseChartProgressBar = this.summaryExpenseChart.appendChild(create('div', { class: 'progress-stacked', style: 'height: 2em' }))
       this.refreshSummary = () => {
+         // refresh person filter
+         const previousPerson = this.summaryPersonSelect.value
+         this.summaryPersonSelect.innerHTML = ''
+         this.summaryPersonSelect.options.add(new Option('All People', '', true, false))
+         for (const person of this.people.values())
+            this.summaryPersonSelect.options.add(new Option(person.name, person.uuid, false, person.uuid === previousPerson))
+         // ...
+         const person = this.people.get(this.summaryPersonSelect.value)
          const cycleDays = CYCLE_DAYS[this.summaryCycleSelect.value as CYCLE] * +this.summaryCycleInput.value
          this.summaryCumulativeTBody.innerHTML = ''
          this.summaryIncomeChartLegend.innerHTML = ''
@@ -195,14 +205,14 @@ export class Budget {
          this.summaryExpenseChartLegend.innerHTML = ''
          this.summaryExpenseChartProgressBar.innerHTML = ''
          const totalIncome = [...this.transactions.values()]
-            .filter(transaction => transaction.amountPer(cycleDays) > 0)
-            .reduce((total, transaction) => total + transaction.amountPer(cycleDays), 0)
+            .filter(transaction => transaction.amountFor(cycleDays, person) > 0)
+            .reduce((total, transaction) => total + transaction.amountFor(cycleDays, person), 0)
          const totalExpense = [...this.transactions.values()]
-            .filter(transaction => transaction.amountPer(cycleDays) < 0)
-            .reduce((total, transaction) => total + transaction.amountPer(cycleDays), 0)
-         const cumulativeSubtotals = [...this.calculateSubtotals(cycleDays).entries()].sort((a, b) => b[1] - a[1])
-         const incomeSubtotals = [...this.calculateSubtotals(cycleDays, transaction => transaction.amountPer(cycleDays) <= 0).entries()].sort((a, b) => b[1] - a[1])
-         const expenseSubtotals = [...this.calculateSubtotals(cycleDays, transaction => transaction.amountPer(cycleDays) >= 0).entries()].sort((a, b) => a[1] - b[1])
+            .filter(transaction => transaction.amountFor(cycleDays, person) < 0)
+            .reduce((total, transaction) => total + transaction.amountFor(cycleDays, person), 0)
+         const cumulativeSubtotals = [...this.calculateSubtotals(cycleDays, person).entries()].sort((a, b) => b[1] - a[1])
+         const incomeSubtotals = [...this.calculateSubtotals(cycleDays, person, transaction => transaction.amountFor(cycleDays, person) <= 0).entries()].sort((a, b) => b[1] - a[1])
+         const expenseSubtotals = [...this.calculateSubtotals(cycleDays, person, transaction => transaction.amountFor(cycleDays, person) >= 0).entries()].sort((a, b) => a[1] - b[1])
          // Cumulative Table
          let cumulative = 0
          var unknownSubtotal = 0
@@ -342,7 +352,8 @@ export class Budget {
             create('div', { class: 'input-group w-auto' }, [
                this.summaryCycleInput,
                this.summaryCycleSelect
-            ])
+            ]),
+            this.summaryPersonSelect
          ]),
          this.summaryCumulativeTable,
          create('div', { class: 'd-flex gap-5 mt-3' }, [
@@ -360,7 +371,7 @@ export class Budget {
       )
    }
 
-   calculateSubtotals(cycleDays: number, excludeFilter?: (transaction: Transaction) => boolean): Map<string, number> {
+   calculateSubtotals(cycleDays: number, person?: Person, excludeFilter?: (transaction: Transaction) => boolean): Map<string, number> {
       return new Map(
          [...new Set([
             ...[...this.categories.values()].map(category => category.uuid),
@@ -370,7 +381,7 @@ export class Budget {
                categoryUUID,
                [...this.transactions.values()]
                   .filter(transaction => transaction.category_uuid === categoryUUID)
-                  .reduce((total, transaction) => excludeFilter?.(transaction) ? total : total + transaction.amountPer(cycleDays), 0)
+                  .reduce((total, transaction) => excludeFilter?.(transaction) ? total : total + transaction.amountFor(cycleDays, person), 0)
             ])
       )
    }

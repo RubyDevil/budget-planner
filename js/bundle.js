@@ -582,6 +582,7 @@
     #amount;
     payment_method_uuid;
     billing_cycle;
+    payers;
     get amount() {
       return this.#amount;
     }
@@ -601,10 +602,13 @@
       this.amount = data.amount;
       this.payment_method_uuid = data.payment_method_uuid;
       this.billing_cycle = data.billing_cycle;
+      this.payers = new Map(Object.entries(data.payers ?? {}));
     }
-    amountPer(targetDays) {
+    amountFor(targetDays, targetPerson) {
       const originalDays = CYCLE_DAYS[this.billing_cycle[1]] * this.billing_cycle[0];
-      return this.amount * targetDays / originalDays;
+      const total = this.amount * targetDays / originalDays;
+      const percentage = targetPerson ? this.payers.get(targetPerson.uuid) ?? 0 : 1;
+      return Math.ceil(total * percentage * 100) / 100;
     }
     createLink() {
       return create("a", { class: "text-primary" }, [Icons.Bidirectional, " " + this.name]);
@@ -657,7 +661,8 @@
         name: this.name,
         amount: this.amount,
         payment_method_uuid: this.payment_method_uuid,
-        billing_cycle: this.billing_cycle
+        billing_cycle: this.billing_cycle,
+        payers: Object.fromEntries(this.payers)
       };
     }
     static buildForm(row, budget2, targetListOrEntry) {
@@ -719,7 +724,8 @@
               name: nameInput.value,
               amount: parseFloat(amountInput.value),
               payment_method_uuid: paymentMethodSelect.value,
-              billing_cycle: [parseInt(cycleInput.value), cycleSelect.value]
+              billing_cycle: [parseInt(cycleInput.value), cycleSelect.value],
+              payers: {}
             }));
             budget2.refreshAll();
             resetForm(row);
@@ -803,6 +809,7 @@
     transactionsTBody;
     transactionsForm;
     refreshTransactions;
+    summaryPersonSelect;
     summaryCycleInput;
     summaryCycleSelect;
     summaryIncomeChart;
@@ -906,6 +913,8 @@
         }
         this.transactionsTBody.append(this.transactionsForm);
       };
+      this.summaryPersonSelect = create("select", { class: "form-select w-auto" });
+      this.summaryPersonSelect.addEventListener("change", () => this.refreshSummary());
       const cycleGroup = create("div", { class: "input-group" });
       this.summaryCycleInput = cycleGroup.appendChild(create("input", {
         class: "form-control",
@@ -924,7 +933,6 @@
       this.summaryCycleSelect.options.add(new Option("Year", "year" /* YEAR */, false, false));
       this.summaryCycleSelect.addEventListener("change", () => this.validateSummaryCycleChange());
       this.validateSummaryCycleChange = () => {
-        console.log(+this.summaryCycleInput.value);
         if (!this.summaryCycleInput.value || +this.summaryCycleInput.value < 1)
           return this.summaryCycleInput.classList.add("is-invalid");
         else {
@@ -947,17 +955,23 @@
       this.summaryExpenseChartLegend = this.summaryExpenseChart.appendChild(create("div", { class: "d-flex justify-content-around align-items-center w-100 flex-wrap gap-1" }));
       this.summaryExpenseChartProgressBar = this.summaryExpenseChart.appendChild(create("div", { class: "progress-stacked", style: "height: 2em" }));
       this.refreshSummary = () => {
+        const previousPerson = this.summaryPersonSelect.value;
+        this.summaryPersonSelect.innerHTML = "";
+        this.summaryPersonSelect.options.add(new Option("All People", "", true, false));
+        for (const person2 of this.people.values())
+          this.summaryPersonSelect.options.add(new Option(person2.name, person2.uuid, false, person2.uuid === previousPerson));
+        const person = this.people.get(this.summaryPersonSelect.value);
         const cycleDays = CYCLE_DAYS[this.summaryCycleSelect.value] * +this.summaryCycleInput.value;
         this.summaryCumulativeTBody.innerHTML = "";
         this.summaryIncomeChartLegend.innerHTML = "";
         this.summaryIncomeChartProgressBar.innerHTML = "";
         this.summaryExpenseChartLegend.innerHTML = "";
         this.summaryExpenseChartProgressBar.innerHTML = "";
-        const totalIncome = [...this.transactions.values()].filter((transaction) => transaction.amountPer(cycleDays) > 0).reduce((total, transaction) => total + transaction.amountPer(cycleDays), 0);
-        const totalExpense = [...this.transactions.values()].filter((transaction) => transaction.amountPer(cycleDays) < 0).reduce((total, transaction) => total + transaction.amountPer(cycleDays), 0);
-        const cumulativeSubtotals = [...this.calculateSubtotals(cycleDays).entries()].sort((a, b) => b[1] - a[1]);
-        const incomeSubtotals = [...this.calculateSubtotals(cycleDays, (transaction) => transaction.amountPer(cycleDays) <= 0).entries()].sort((a, b) => b[1] - a[1]);
-        const expenseSubtotals = [...this.calculateSubtotals(cycleDays, (transaction) => transaction.amountPer(cycleDays) >= 0).entries()].sort((a, b) => a[1] - b[1]);
+        const totalIncome = [...this.transactions.values()].filter((transaction) => transaction.amountFor(cycleDays, person) > 0).reduce((total, transaction) => total + transaction.amountFor(cycleDays, person), 0);
+        const totalExpense = [...this.transactions.values()].filter((transaction) => transaction.amountFor(cycleDays, person) < 0).reduce((total, transaction) => total + transaction.amountFor(cycleDays, person), 0);
+        const cumulativeSubtotals = [...this.calculateSubtotals(cycleDays, person).entries()].sort((a, b) => b[1] - a[1]);
+        const incomeSubtotals = [...this.calculateSubtotals(cycleDays, person, (transaction) => transaction.amountFor(cycleDays, person) <= 0).entries()].sort((a, b) => b[1] - a[1]);
+        const expenseSubtotals = [...this.calculateSubtotals(cycleDays, person, (transaction) => transaction.amountFor(cycleDays, person) >= 0).entries()].sort((a, b) => a[1] - b[1]);
         let cumulative = 0;
         var unknownSubtotal = 0;
         for (const [categoryUUID, subtotal] of cumulativeSubtotals) {
@@ -1105,7 +1119,8 @@
           create("div", { class: "input-group w-auto" }, [
             this.summaryCycleInput,
             this.summaryCycleSelect
-          ])
+          ]),
+          this.summaryPersonSelect
         ]),
         this.summaryCumulativeTable,
         create("div", { class: "d-flex gap-5 mt-3" }, [
@@ -1122,14 +1137,14 @@
         ])
       );
     }
-    calculateSubtotals(cycleDays, excludeFilter) {
+    calculateSubtotals(cycleDays, person, excludeFilter) {
       return new Map(
         [...(/* @__PURE__ */ new Set([
           ...[...this.categories.values()].map((category) => category.uuid),
           ...[...this.transactions.values()].map((transaction) => transaction.category_uuid)
         ])).values()].map((categoryUUID) => [
           categoryUUID,
-          [...this.transactions.values()].filter((transaction) => transaction.category_uuid === categoryUUID).reduce((total, transaction) => excludeFilter?.(transaction) ? total : total + transaction.amountPer(cycleDays), 0)
+          [...this.transactions.values()].filter((transaction) => transaction.category_uuid === categoryUUID).reduce((total, transaction) => excludeFilter?.(transaction) ? total : total + transaction.amountFor(cycleDays, person), 0)
         ])
       );
     }
