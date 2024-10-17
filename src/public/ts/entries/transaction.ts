@@ -4,13 +4,15 @@ import { Category } from "./category"
 import { CYCLE, CYCLE_DAYS } from "./cycle"
 import { Entry, EntryJson } from "./entry"
 import { PaymentMethod } from "./payment-method"
+import { Person } from "./person"
 
 export interface TransactionJson extends EntryJson {
    category_uuid: string
    name: string
    amount: number
-   payment_method_uuid: string,
+   payment_method_uuid: string
    billing_cycle: [number, CYCLE]
+   payers: { [uuid: string]: number }
 }
 
 export class Transaction extends Entry {
@@ -28,7 +30,8 @@ export class Transaction extends Entry {
    name: string
    #amount: number
    payment_method_uuid: string
-   billing_cycle: TransactionJson['billing_cycle']
+   billing_cycle: [number, CYCLE]
+   payers: Map<string, number>
 
    get amount() { return this.#amount }
    set amount(value) { this.#amount = Math.round(value * 100) / 100 }
@@ -43,11 +46,14 @@ export class Transaction extends Entry {
       this.amount = data.amount
       this.payment_method_uuid = data.payment_method_uuid
       this.billing_cycle = data.billing_cycle
+      this.payers = new Map(Object.entries(data.payers ?? {}))
    }
 
-   amountPer(targetDays: number) {
+   amountFor(targetDays: number, targetPerson?: Person) {
       const originalDays = CYCLE_DAYS[this.billing_cycle[1]] * this.billing_cycle[0]
-      return this.amount * targetDays / originalDays
+      const total = this.amount * targetDays / originalDays
+      const percentage = targetPerson ? this.payers.get(targetPerson.uuid) ?? 0 : 1
+      return Math.ceil(total * percentage * 100) / 100
    }
 
    createLink(): HTMLAnchorElement {
@@ -113,7 +119,8 @@ export class Transaction extends Entry {
          name: this.name,
          amount: this.amount,
          payment_method_uuid: this.payment_method_uuid,
-         billing_cycle: this.billing_cycle
+         billing_cycle: this.billing_cycle,
+         payers: Object.fromEntries(this.payers)
       }
    }
 
@@ -188,7 +195,8 @@ export class Transaction extends Entry {
                   name: nameInput.value,
                   amount: parseFloat(amountInput.value),
                   payment_method_uuid: paymentMethodSelect.value,
-                  billing_cycle: [parseInt(cycleInput.value), cycleSelect.value as CYCLE]
+                  billing_cycle: [parseInt(cycleInput.value), cycleSelect.value as CYCLE],
+                  payers: {}
                }))
                budget.refreshAll()
                resetForm(row)
