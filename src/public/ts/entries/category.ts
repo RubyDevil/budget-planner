@@ -40,7 +40,7 @@ export class Category extends Entry {
       return blendColors("#ffffff", this.color, amount)
    }
 
-   build() {
+   buildRow() {
       this.row.style.backgroundColor = this.accentColor()
       this.row.innerHTML = ''
       // Name and Icon
@@ -115,7 +115,7 @@ export class Category extends Entry {
       const actions = row.insertCell().appendChild(create('span', { class: 'd-flex gap-2' }))
       if (editTarget) {
          actions.appendChild(Buttons.Save).addEventListener('click', () => editTarget.save())
-         actions.appendChild(Buttons.Cancel).addEventListener('click', () => editTarget.build())
+         actions.appendChild(Buttons.Cancel).addEventListener('click', () => editTarget.buildRow())
       } else {
          actions.appendChild(Buttons.Add).addEventListener('click', (e) => {
             nameInput.value = nameInput.value.trim()

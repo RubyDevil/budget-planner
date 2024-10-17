@@ -33,7 +33,7 @@ export class PaymentMethod extends Entry {
       return create('a', { class: 'text-primary' }, [Icons.Dollar, ' ' + this.name])
    }
 
-   build() {
+   buildRow() {
       this.row.innerHTML = ''
       // Name
       this.row.insertCell().textContent = this.name
@@ -98,7 +98,7 @@ export class PaymentMethod extends Entry {
       const actions = row.insertCell().appendChild(create('span', { class: 'd-flex gap-2' }))
       if (editTarget) {
          actions.appendChild(Buttons.Save).addEventListener('click', () => editTarget.save())
-         actions.appendChild(Buttons.Cancel).addEventListener('click', () => editTarget.build())
+         actions.appendChild(Buttons.Cancel).addEventListener('click', () => editTarget.buildRow())
       } else {
          actions.appendChild(Buttons.Add).addEventListener('click', (e) => {
             // Trim values
