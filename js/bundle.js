@@ -165,6 +165,9 @@
     },
     get Bidirectional() {
       return create("i", { class: "bi-arrow-left-right" });
+    },
+    get Percent() {
+      return create("i", { class: "bi-percent" });
     }
   };
   var Buttons = {
@@ -673,6 +676,9 @@
       actions.appendChild(Buttons.Edit).addEventListener("click", () => this.edit());
       actions.appendChild(Buttons.Delete).addEventListener("click", () => this.delete());
       this.row.querySelectorAll("td")?.forEach((td) => td.style.background = "inherit");
+      this.row.cells[0].classList.add("d-none", "d-lg-table-cell");
+      this.row.cells[3].classList.add("d-none", "d-lg-table-cell");
+      this.row.cells[4].classList.add("d-none", "d-lg-table-cell");
       return this.row;
     }
     edit() {
@@ -705,6 +711,15 @@
       cycleSelect.options.add(new Option("Week", "week" /* WEEK */, false, this.billing_cycle[1] === "week" /* WEEK */));
       cycleSelect.options.add(new Option("Month", "month" /* MONTH */, false, this.billing_cycle[1] === "month" /* MONTH */));
       cycleSelect.options.add(new Option("Year", "year" /* YEAR */, false, this.billing_cycle[1] === "year" /* YEAR */));
+      const payerList = Modal.body.appendChild(create("ul", { class: "list-group" }));
+      for (const [uuid, amount] of this.payers) {
+        const person = this.budget.people.get(uuid);
+        if (!person) throw new Error("Person not found");
+        payerList.appendChild(create("li", { class: "list-group-item d-flex justify-content-between align-items-center" }, [
+          person.name,
+          create("input", { type: "number", class: "form-control", "data-person-uuid": person.uuid, value: amount * 100 })
+        ]));
+      }
       Modal.body.appendChild(create("form", { class: "d-flex flex-column gap-2" }, [
         withFloatingLabel("Category", categorySelect),
         withFloatingLabel("Name", nameInput),
@@ -713,7 +728,13 @@
         create("div", { class: "input-group" }, [
           withFloatingLabel("Cycle Count", cycleInput),
           withFloatingLabel("Cycle Type", cycleSelect)
-        ])
+        ]),
+        create("h5", {}, "Payers"),
+        payerList
+        // create('div', { class: 'd-flex gap-2' }, [
+        //    payerSelect,
+        //    payerAddButton
+        // ])
       ]));
       const saveButton = Modal.footer.appendChild(create("button", { class: "btn btn-success" }, "Save"));
       saveButton.addEventListener("click", () => {
@@ -866,11 +887,11 @@
       this.transactionsTHead = this.transactionsTable.createTHead();
       this.transactionsTBody = this.transactionsTable.createTBody();
       this.transactionsTHead.appendChild(create("tr", { style: "white-space: nowrap" })).append(
-        create("th", { scope: "col", class: "fit" }, "Category"),
-        create("th", { scope: "col", class: "fit" }, "Name"),
-        create("th", { scope: "col", class: "fit" }, "Amount"),
-        create("th", { scope: "col", class: "fit" }, "Payment Method"),
-        create("th", { scope: "col", class: "fit" }, "Billing Cycle"),
+        create("th", { scope: "col", class: "d-none d-lg-table-cell" }, "Category"),
+        create("th", { scope: "col", class: "" }, "Name"),
+        create("th", { scope: "col", class: "" }, "Amount"),
+        create("th", { scope: "col", class: "d-none d-lg-table-cell" }, "Payment Method"),
+        create("th", { scope: "col", class: "d-none d-lg-table-cell" }, "Billing Cycle"),
         create("th", { scope: "col", class: "fit" }, "Actions")
       );
       this.transactionsAddButton = create("button", { class: "btn btn-success" }, ["Add ", Icons.Plus]);
@@ -931,10 +952,10 @@
         create("th", { scope: "col" }, "Subtotal"),
         create("th", { scope: "col", class: "fit" }, "Cumulative")
       );
-      this.summaryIncomeChart = create("div", { class: "d-flex flex-column gap-2 my-3 w-50 justify-content-end" });
+      this.summaryIncomeChart = create("div", { class: "d-flex flex-column gap-2 my-3 justify-content-end" });
       this.summaryIncomeChartLegend = this.summaryIncomeChart.appendChild(create("div", { class: "d-flex justify-content-around align-items-center w-100 flex-wrap gap-1" }));
       this.summaryIncomeChartProgressBar = this.summaryIncomeChart.appendChild(create("div", { class: "progress-stacked", style: "height: 2em" }));
-      this.summaryExpenseChart = create("div", { class: "d-flex flex-column gap-2 my-3 w-50 justify-content-end" });
+      this.summaryExpenseChart = create("div", { class: "d-flex flex-column gap-2 my-3 justify-content-end" });
       this.summaryExpenseChartLegend = this.summaryExpenseChart.appendChild(create("div", { class: "d-flex justify-content-around align-items-center w-100 flex-wrap gap-1" }));
       this.summaryExpenseChartProgressBar = this.summaryExpenseChart.appendChild(create("div", { class: "progress-stacked", style: "height: 2em" }));
       this.refreshSummary = () => {
@@ -1082,7 +1103,7 @@
     }
     render(root2) {
       root2.append(
-        create("div", { class: "d-flex gap-5" }, [
+        create("div", { class: "d-flex flex-wrap gap-5" }, [
           create("div", { class: "flex-fill" }, [
             create("h2", { class: "fit" }, [Icons.Person, " People"]),
             this.peopleTable
@@ -1106,14 +1127,18 @@
           this.summaryPersonSelect
         ]),
         this.summaryCumulativeTable,
-        create("div", { class: "d-flex gap-5 mt-3" }, [
-          create("h3", { class: "flex-grow-1 m-0 text-center" }, "Income"),
-          create("h3", { class: "flex-grow-1 m-0 text-center" }, "Expenses")
-        ]),
-        create("div", { class: "d-flex gap-5 mb-3" }, [
-          this.summaryIncomeChart,
-          this.summaryExpenseChart
-        ]),
+        // create('div', { class: 'd-flex gap-5 mt-3' }, [
+        //    create('h3', { class: 'flex-grow-1 m-0 text-center' }, 'Income'),
+        //    create('h3', { class: 'flex-grow-1 m-0 text-center' }, 'Expenses')
+        // ]),
+        // create('div', { class: 'd-flex gap-5 mb-3' }, [
+        //    this.summaryIncomeChart,
+        //    this.summaryExpenseChart,
+        // ]),
+        create("h3", { class: "fit mt-5" }, "Income"),
+        this.summaryIncomeChart,
+        create("h3", { class: "fit mt-5" }, "Expenses"),
+        this.summaryExpenseChart,
         create("div", { class: "d-flex gap-2 justify-content-center w-100 my-5" }, [
           this.downloadButton,
           this.uploadButton
@@ -1136,15 +1161,17 @@
   // src/public/ts/index.ts
   var budget = new Budget();
   var personMe = new Person(budget, { uuid: crypto.randomUUID(), name: "Me" });
+  var personOther = new Person(budget, { uuid: crypto.randomUUID(), name: "Someone else" });
   var paymentMethodCash = new PaymentMethod(budget, { uuid: crypto.randomUUID(), name: "Cash", owner_uuid: personMe.uuid });
   var paymentMethodBankAccount = new PaymentMethod(budget, { uuid: crypto.randomUUID(), name: "Bank Account", owner_uuid: personMe.uuid });
-  var categorySalaries = new Category(budget, { uuid: crypto.randomUUID(), icon: Icons.CashStack.className, name: "Salaries" });
-  var categoryBills = new Category(budget, { uuid: crypto.randomUUID(), icon: Icons.Card.className, name: "Bills" });
-  var transactionSalary = new Transaction(budget, { uuid: crypto.randomUUID(), category_uuid: categorySalaries.uuid, name: "Salary", amount: 5432.1, payment_method_uuid: paymentMethodBankAccount.uuid, billing_cycle: [1, "month" /* MONTH */] });
-  var transactionRent = new Transaction(budget, { uuid: crypto.randomUUID(), category_uuid: categoryBills.uuid, name: "Rent", amount: -1234.56, payment_method_uuid: paymentMethodCash.uuid, billing_cycle: [1, "month" /* MONTH */] });
-  var transactionUnknownIncome = new Transaction(budget, { uuid: crypto.randomUUID(), category_uuid: "...", name: "Misc (Unknown)", amount: 1500, payment_method_uuid: paymentMethodCash.uuid, billing_cycle: [1, "month" /* MONTH */] });
-  var transactionUnknownExpense = new Transaction(budget, { uuid: crypto.randomUUID(), category_uuid: "...", name: "Misc (Unknown)", amount: -150, payment_method_uuid: paymentMethodCash.uuid, billing_cycle: [1, "month" /* MONTH */] });
+  var categorySalaries = new Category(budget, { uuid: crypto.randomUUID(), icon: Icons.CashStack.className, name: "Salaries", color: "#00ff00" });
+  var categoryBills = new Category(budget, { uuid: crypto.randomUUID(), icon: Icons.Card.className, name: "Bills", color: "#ff0000" });
+  var transactionSalary = new Transaction(budget, { uuid: crypto.randomUUID(), category_uuid: categorySalaries.uuid, name: "Salary", amount: 5432.1, payment_method_uuid: paymentMethodBankAccount.uuid, billing_cycle: [1, "month" /* MONTH */], payers: {} });
+  var transactionRent = new Transaction(budget, { uuid: crypto.randomUUID(), category_uuid: categoryBills.uuid, name: "Rent", amount: -1234.56, payment_method_uuid: paymentMethodCash.uuid, billing_cycle: [1, "month" /* MONTH */], payers: { [personMe.uuid]: 0.5, [personOther.uuid]: 0.5 } });
+  var transactionUnknownIncome = new Transaction(budget, { uuid: crypto.randomUUID(), category_uuid: "...", name: "Misc (Unknown)", amount: 1500, payment_method_uuid: paymentMethodCash.uuid, billing_cycle: [1, "month" /* MONTH */], payers: {} });
+  var transactionUnknownExpense = new Transaction(budget, { uuid: crypto.randomUUID(), category_uuid: "...", name: "Misc (Unknown)", amount: -150, payment_method_uuid: paymentMethodCash.uuid, billing_cycle: [1, "month" /* MONTH */], payers: {} });
   budget.people.set(personMe.uuid, personMe);
+  budget.people.set(personOther.uuid, personOther);
   budget.paymentMethods.set(paymentMethodCash.uuid, paymentMethodCash);
   budget.paymentMethods.set(paymentMethodBankAccount.uuid, paymentMethodBankAccount);
   budget.categories.set(categorySalaries.uuid, categorySalaries);

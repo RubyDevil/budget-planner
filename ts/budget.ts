@@ -115,11 +115,11 @@ export class Budget {
       this.transactionsTHead = this.transactionsTable.createTHead()
       this.transactionsTBody = this.transactionsTable.createTBody()
       this.transactionsTHead.appendChild(create('tr', { style: 'white-space: nowrap' })).append(
-         create('th', { scope: 'col', class: 'fit' }, 'Category'),
-         create('th', { scope: 'col', class: 'fit' }, 'Name'),
-         create('th', { scope: 'col', class: 'fit' }, 'Amount'),
-         create('th', { scope: 'col', class: 'fit' }, 'Payment Method'),
-         create('th', { scope: 'col', class: 'fit' }, 'Billing Cycle'),
+         create('th', { scope: 'col', class: 'd-none d-lg-table-cell' }, 'Category'),
+         create('th', { scope: 'col', class: '' }, 'Name'),
+         create('th', { scope: 'col', class: '' }, 'Amount'),
+         create('th', { scope: 'col', class: 'd-none d-lg-table-cell' }, 'Payment Method'),
+         create('th', { scope: 'col', class: 'd-none d-lg-table-cell' }, 'Billing Cycle'),
          create('th', { scope: 'col', class: 'fit' }, 'Actions')
       )
       this.transactionsAddButton = create('button', { class: 'btn btn-success' }, ['Add ', Icons.Plus])
@@ -183,10 +183,10 @@ export class Budget {
          create('th', { scope: 'col' }, 'Subtotal'),
          create('th', { scope: 'col', class: 'fit' }, 'Cumulative'),
       )
-      this.summaryIncomeChart = create('div', { class: 'd-flex flex-column gap-2 my-3 w-50 justify-content-end' })
+      this.summaryIncomeChart = create('div', { class: 'd-flex flex-column gap-2 my-3 justify-content-end' })
       this.summaryIncomeChartLegend = this.summaryIncomeChart.appendChild(create('div', { class: 'd-flex justify-content-around align-items-center w-100 flex-wrap gap-1' }))
       this.summaryIncomeChartProgressBar = this.summaryIncomeChart.appendChild(create('div', { class: 'progress-stacked', style: 'height: 2em' }))
-      this.summaryExpenseChart = create('div', { class: 'd-flex flex-column gap-2 my-3 w-50 justify-content-end' })
+      this.summaryExpenseChart = create('div', { class: 'd-flex flex-column gap-2 my-3 justify-content-end' })
       this.summaryExpenseChartLegend = this.summaryExpenseChart.appendChild(create('div', { class: 'd-flex justify-content-around align-items-center w-100 flex-wrap gap-1' }))
       this.summaryExpenseChartProgressBar = this.summaryExpenseChart.appendChild(create('div', { class: 'progress-stacked', style: 'height: 2em' }))
       this.refreshSummary = () => {
@@ -332,7 +332,7 @@ export class Budget {
 
    render(root: HTMLElement) {
       root.append(
-         create('div', { class: 'd-flex gap-5' }, [
+         create('div', { class: 'd-flex flex-wrap gap-5' }, [
             create('div', { class: 'flex-fill' }, [
                create('h2', { class: 'fit' }, [Icons.Person, ' People']),
                this.peopleTable
@@ -356,14 +356,18 @@ export class Budget {
             this.summaryPersonSelect
          ]),
          this.summaryCumulativeTable,
-         create('div', { class: 'd-flex gap-5 mt-3' }, [
-            create('h3', { class: 'flex-grow-1 m-0 text-center' }, 'Income'),
-            create('h3', { class: 'flex-grow-1 m-0 text-center' }, 'Expenses')
-         ]),
-         create('div', { class: 'd-flex gap-5 mb-3' }, [
-            this.summaryIncomeChart,
-            this.summaryExpenseChart,
-         ]),
+         // create('div', { class: 'd-flex gap-5 mt-3' }, [
+         //    create('h3', { class: 'flex-grow-1 m-0 text-center' }, 'Income'),
+         //    create('h3', { class: 'flex-grow-1 m-0 text-center' }, 'Expenses')
+         // ]),
+         // create('div', { class: 'd-flex gap-5 mb-3' }, [
+         //    this.summaryIncomeChart,
+         //    this.summaryExpenseChart,
+         // ]),
+         create('h3', { class: 'fit mt-5' }, 'Income'),
+         this.summaryIncomeChart,
+         create('h3', { class: 'fit mt-5' }, 'Expenses'),
+         this.summaryExpenseChart,
          create('div', { class: 'd-flex gap-2 justify-content-center w-100 my-5' }, [
             this.downloadButton,
             this.uploadButton
