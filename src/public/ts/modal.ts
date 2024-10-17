@@ -1,17 +1,17 @@
 import { create } from "./utils"
 
-export class Modal {
-   #bsInstance: bootstrap.Modal
-   root: HTMLDivElement
-   dialog: HTMLDivElement
-   content: HTMLDivElement
-   header: HTMLDivElement
-   body: HTMLDivElement
-   footer: HTMLDivElement
-   title: HTMLHeadingElement
-   #closeButton: HTMLButtonElement
+export abstract class Modal {
+   static root: HTMLDivElement = document.body.appendChild(create('div', { class: 'modal fade', tabindex: -1, 'data-bs-backdrop': 'static', 'data-bs-keyboard': 'false' }))
+   static dialog: HTMLDivElement = this.root.appendChild(create('div', { class: 'modal-dialog modal-dialog-centered modal-dialog-scrollable' }))
+   static content: HTMLDivElement = this.dialog.appendChild(create('div', { class: 'modal-content' }))
+   static header: HTMLDivElement = this.content.appendChild(create('div', { class: 'modal-header' }))
+   static body: HTMLDivElement = this.content.appendChild(create('div', { class: 'modal-body container-fluid' }))
+   static footer: HTMLDivElement = this.content.appendChild(create('div', { class: 'modal-footer' }))
+   static title: HTMLHeadingElement = this.header.appendChild(create('h5', { class: 'modal-title' }))
+   static #closeButton: HTMLButtonElement = this.header.appendChild(create('button', { type: 'button', class: 'btn-close', 'data-bs-dismiss': 'modal', 'aria-label': 'Close' })) /* @ts-ignore */
+   static #bsInstance: bootstrap.Modal = new bootstrap.Modal(this.root)
 
-   constructor(title: string, dismissable: boolean, ephemeral: boolean = true) {
+   static rebuild(title: string, dismissable: boolean) {
       this.root = document.body.appendChild(create('div', { class: 'modal fade', tabindex: -1, 'data-bs-backdrop': dismissable || 'static', 'data-bs-keyboard': dismissable }))
       this.dialog = this.root.appendChild(create('div', { class: 'modal-dialog modal-dialog-centered modal-dialog-scrollable' }))
       this.content = this.dialog.appendChild(create('div', { class: 'modal-content' }))
@@ -21,17 +21,11 @@ export class Modal {
       this.title = this.header.appendChild(create('h5', { class: 'modal-title' }, title))
       this.#closeButton = this.header.appendChild(create('button', { type: 'button', class: 'btn-close', 'data-bs-dismiss': 'modal', 'aria-label': 'Close' }))
       if (!dismissable) this.#closeButton.remove()
-      /* @ts-ignore */
+      this.#bsInstance.dispose() /* @ts-ignore */
       this.#bsInstance = new bootstrap.Modal(this.root)
-      if (ephemeral) this.root.addEventListener('hidden.bs.modal', () => this.destroy())
    }
 
-   show() { this.#bsInstance.show() }
-   hide() { this.#bsInstance.hide() }
-   toggle() { this.#bsInstance.toggle() }
-
-   destroy() {
-      this.#bsInstance.dispose()
-      this.root.remove()
-   }
+   static show() { this.#bsInstance.show() }
+   static hide() { this.#bsInstance.hide() }
+   static toggle() { this.#bsInstance.toggle() }
 }
